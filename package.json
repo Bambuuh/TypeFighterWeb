@@ -1,0 +1,24 @@
+{
+  "name": "type-fighter",
+  "version": "1.0.0",
+  "description": "type to fight",
+  "main": "app.ts",
+  "bin": {
+    "type-fighter": "app.js"
+  },
+  "scripts": {
+    "start": "node bin/server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.0.34",
+    "@types/socket.io": "^1.4.27",
+    "express": "4.14.0",
+    "http": "0.0.0",
+    "socket.io": "^1.7.2"
+  },
+  "devDependencies": {
+    "typings": "^2.1.0"
+  }
+}
