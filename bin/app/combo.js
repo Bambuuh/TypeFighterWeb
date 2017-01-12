@@ -40,5 +40,14 @@ class Combo {
         const nextLetter = this.combo.combo.find(comboLetter => !comboLetter.done);
         nextLetter.done = nextLetter.letter.toUpperCase() === letter.toUpperCase();
     }
+    draw(context) {
+        let x = 0;
+        this.combo.combo.forEach(comboChar => {
+            context.fillStyle = comboChar.done ? 'red' : 'white';
+            context.font = this.font;
+            context.fillText(comboChar.letter, this.x + x, this.y);
+            x += context.measureText(comboChar.letter).width;
+        });
+    }
 }
 //# sourceMappingURL=combo.js.map

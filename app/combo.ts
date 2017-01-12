@@ -63,15 +63,13 @@ class Combo {
         nextLetter.done = nextLetter.letter.toUpperCase() === letter.toUpperCase();
     }
 
-    // public draw(context: CanvasRenderingContext2D) {
-    //     if (this.combo.length > 0) {
-    //         let letterX = 0;
-    //         this.combo.forEach(comboChar => {
-    //             context.fillStyle = comboChar.done ? 'red' : 'white';
-    //             context.font="20px Georgia";
-    //             context.fillText(comboChar.letter, this.x + letterX, this.y);
-    //             letterX += context.measureText(comboChar.letter).width;
-    //         });
-    //     }
-    // }
+    public draw(context: CanvasRenderingContext2D) {
+        let x = 0;
+        this.combo.combo.forEach(comboChar => {
+            context.fillStyle = comboChar.done ? 'red' : 'white';
+            context.font = this.font;
+            context.fillText(comboChar.letter, this.x + x, this.y);
+            x += context.measureText(comboChar.letter).width;
+        });
+    }
 }

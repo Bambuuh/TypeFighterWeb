@@ -59,21 +59,8 @@ class Game {
         this.playerTwoHealth.draw(this.context);
     }
     drawCombo() {
-        let letterX;
-        letterX = 0;
-        this.playerOneCombo.getCombo().combo.forEach(comboChar => {
-            this.context.fillStyle = comboChar.done ? 'red' : 'white';
-            this.context.font = this.playerOneCombo.getFont();
-            this.context.fillText(comboChar.letter, this.playerOneCombo.getX() + letterX, this.playerOneCombo.getY());
-            letterX += this.context.measureText(comboChar.letter).width;
-        });
-        letterX = 0;
-        this.playerTwoCombo.getCombo().combo.forEach(comboChar => {
-            this.context.fillStyle = comboChar.done ? 'red' : 'white';
-            this.context.font = this.playerTwoCombo.getFont();
-            this.context.fillText(comboChar.letter, this.playerTwoCombo.getX() + letterX, this.playerTwoCombo.getY());
-            letterX += this.context.measureText(comboChar.letter).width;
-        });
+        this.playerOneCombo.draw(this.context);
+        this.playerTwoCombo.draw(this.context);
     }
     drawPlayers() {
         this.playerOne.draw(this.context);

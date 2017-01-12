@@ -7,7 +7,7 @@
     "type-fighter": "app.js"
   },
   "scripts": {
-    "start": "node bin/server.js"
+    "start": "node bin/server/server.js"
   },
   "author": "",
   "license": "ISC",
