@@ -7,4 +7,3 @@ window.onload = () => {
     game.init(canvas);
     game.start();
 };
-//# sourceMappingURL=app.js.map

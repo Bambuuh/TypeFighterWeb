@@ -1,41 +1,41 @@
 class Player {
-    private health = 10;
-
-    private avatarWidth = 50;
-    private avatarHeight = 100;
 
     private x: number;
     private y: number;
 
-    constructor(width: number, height: number, playerTwo: boolean) {
-        this.init(width, height, playerTwo);
+    private combatText = new CombatText();
+    private currentIndex: 0;
+
+    private font = '20pt Georgia';
+
+    constructor(width: number, height: number) {
+        this.init(width, height);
     }
 
-    public init(width: number, height: number, playerTwo: boolean)  {
-        this.x = playerTwo ? width - (this.avatarWidth + 300) : 300;
-        this.y = height - this.avatarHeight - 50;
+    public init(width: number, height: number)  {
     };
 
-    public getHealth() {
-        return this.health;
+    public getIndex() {
+        return this.combatText.getIndex();
     }
 
-    public reduceHealth() {
-        this.health--;
-    }
-
-    public getAvatarX() {
+    public getX() {
         return this.x;
     }
 
-    public getAvatarY() {
+    public getY() {
         return this.y
     }
 
-    public draw(context: CanvasRenderingContext2D) {
-        context.beginPath()
-        context.fillStyle = 'blue';
-        context.rect(this.x, this.y, this.avatarWidth, this.avatarHeight);
-        context.fill();
+    public getCombatText() {
+        return this.combatText;
+    }
+
+    public enterLetter(letter: string) {
+        this.combatText.enterLetter(letter);
+    }
+
+    public draw(context: CanvasRenderingContext2D, width: number, height: number) {
+        this.combatText.draw(context, this.font, width, height);
     }
 }

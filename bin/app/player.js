@@ -1,32 +1,28 @@
 class Player {
-    constructor(width, height, playerTwo) {
-        this.health = 10;
-        this.avatarWidth = 50;
-        this.avatarHeight = 100;
-        this.init(width, height, playerTwo);
+    constructor(width, height) {
+        this.combatText = new CombatText();
+        this.font = '20pt Georgia';
+        this.init(width, height);
     }
-    init(width, height, playerTwo) {
-        this.x = playerTwo ? width - (this.avatarWidth + 300) : 300;
-        this.y = height - this.avatarHeight - 50;
+    init(width, height) {
     }
     ;
-    getHealth() {
-        return this.health;
+    getIndex() {
+        return this.combatText.getIndex();
     }
-    reduceHealth() {
-        this.health--;
-    }
-    getAvatarX() {
+    getX() {
         return this.x;
     }
-    getAvatarY() {
+    getY() {
         return this.y;
     }
-    draw(context) {
-        context.beginPath();
-        context.fillStyle = 'blue';
-        context.rect(this.x, this.y, this.avatarWidth, this.avatarHeight);
-        context.fill();
+    getCombatText() {
+        return this.combatText;
+    }
+    enterLetter(letter) {
+        this.combatText.enterLetter(letter);
+    }
+    draw(context, width, height) {
+        this.combatText.draw(context, this.font, width, height);
     }
 }
-//# sourceMappingURL=player.js.map
