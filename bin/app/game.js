@@ -6,7 +6,7 @@ class Game {
             requestAnimationFrame(this.loop);
         };
     }
-    init(canvas) {
+    init(canvas, option) {
         this.context = canvas.getContext('2d');
         this.canvas = canvas;
         this.width = this.canvas.width;
@@ -40,7 +40,8 @@ class Game {
     drawCombo() {
         this.player.draw(this.context, this.width, this.height);
     }
-    drawPlayers() {
+    createGame(gameName) {
+        console.log(gameName);
     }
     enterLetter(keycode) {
         // guaranteed to be a letter

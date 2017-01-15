@@ -20,6 +20,7 @@ app.use(express.static('bin'));
 app.use('/root', express.static(path.join(__dirname, '/../..')));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname + '/../../index.html')));
+app.get('/game', (req, res) => res.sendFile(path.join(__dirname + '/../../game.html')));
 
 
 io.on('connection', (client) => {

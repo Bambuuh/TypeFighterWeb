@@ -12,8 +12,7 @@ class Game {
 
     constructor() { }
 
-    public init(canvas: HTMLCanvasElement) {
-
+    public init(canvas: HTMLCanvasElement, option: string) {
         this.context = canvas.getContext('2d');
         this.canvas = canvas;
         this.width = this.canvas.width;
@@ -58,7 +57,8 @@ class Game {
         this.player.draw(this.context, this.width, this.height);
     }
 
-    private drawPlayers() {
+    public createGame(gameName: string) {
+        console.log(gameName);
     }
 
     public enterLetter(keycode: number) {

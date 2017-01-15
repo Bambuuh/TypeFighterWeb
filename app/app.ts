@@ -1,11 +1,7 @@
-const game = new Game();
-
-window.onkeydown = (event) => {
-    game.enterLetter(event.keyCode);
-}
+const uiHandler = new UiHandler();
+const option = '';
 
 window.onload = () => {
-    const canvas = <HTMLCanvasElement>document.getElementById('canvas');
-    game.init(canvas);
-    game.start();
+    uiHandler.setContainer(<HTMLDivElement>document.getElementById('content-container'))
+    uiHandler.setupStartState();
 }
