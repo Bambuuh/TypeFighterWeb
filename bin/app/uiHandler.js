@@ -9,48 +9,71 @@ class UiHandler {
         this.emptyContainer();
         const createButton = document.createElement('button');
         const joinButton = document.createElement('button');
+        const quickplayButton = document.createElement('button');
         createButton.id = "create-game";
         createButton.onclick = () => this.setupCreateState();
         createButton.innerHTML = "CREATE GAME";
         joinButton.id = "join-game";
         joinButton.onclick = () => this.setupJoinState();
         joinButton.innerHTML = "JOIN GAME";
+        quickplayButton.id = "quickplay";
+        quickplayButton.onclick = () => console.log('quickplay');
+        quickplayButton.innerHTML = "QUICKPLAY";
         this.container.appendChild(createButton);
         this.container.appendChild(joinButton);
+        this.container.appendChild(quickplayButton);
     }
     setupCreateState() {
         this.emptyContainer();
-        const inputField = document.createElement('input');
+        const inputNameField = document.createElement('input');
+        const inputPasswordField = document.createElement('input');
         const createButton = document.createElement('button');
-        inputField.id = 'game-name-input';
-        inputField.placeholder = 'GAME NAME';
+        inputNameField.id = 'game-name-input';
+        inputNameField.className = "create-game-input";
+        inputNameField.placeholder = 'GAME NAME';
+        inputPasswordField.id = 'game-password-input';
+        inputPasswordField.className = "create-game-input";
+        inputPasswordField.placeholder = 'PASSWORD';
         createButton.innerHTML = 'CREATE GAME';
         createButton.onclick = () => this.createGame();
-        this.container.appendChild(inputField);
+        this.container.appendChild(inputNameField);
+        this.container.appendChild(inputPasswordField);
         this.container.appendChild(createButton);
     }
     createGame() {
-        const input = document.getElementById('game-name-input');
-        const gameName = input.value;
+        const nameInput = document.getElementById('game-name-input');
+        const passwordInput = document.getElementById('game-password-input');
+        const gameName = nameInput.value;
+        const password = passwordInput.value;
         if (gameName.length > 0) {
-            this.game.createGame(gameName);
+            this.game.createGame(gameName, password);
         }
     }
     setupJoinState() {
         this.emptyContainer();
-        const activeGameContainer = document.createElement('div');
+        const inputNameField = document.createElement('input');
+        const inputPasswordField = document.createElement('input');
         const joinButton = document.createElement('button');
-        for (let i = 0; i < 10; i++) {
-            const activeGame = document.createElement('div');
-            activeGame.innerHTML = 'Game number: ' + i;
-            activeGame.className = 'active-game';
-            activeGameContainer.appendChild(activeGame);
-            activeGame.onclick = () => this.chooseGame(activeGame);
-        }
+        inputNameField.id = 'game-name-input';
+        inputNameField.className = "create-game-input";
+        inputNameField.placeholder = 'GAME NAME';
+        inputPasswordField.id = 'game-password-input';
+        inputPasswordField.className = "create-game-input";
+        inputPasswordField.placeholder = 'PASSWORD';
         joinButton.innerHTML = 'JOIN GAME';
-        joinButton.id = "join-game";
-        this.container.appendChild(activeGameContainer);
+        joinButton.onclick = () => this.joinGame();
+        this.container.appendChild(inputNameField);
+        this.container.appendChild(inputPasswordField);
         this.container.appendChild(joinButton);
+    }
+    joinGame() {
+        const nameInput = document.getElementById('game-name-input');
+        const passwordInput = document.getElementById('game-password-input');
+        const gameName = nameInput.value;
+        const password = passwordInput.value;
+        if (gameName.length > 0) {
+            this.game.joinGame(gameName, password);
+        }
     }
     chooseGame(element) {
         const currentSelected = document.getElementById('selected-game');

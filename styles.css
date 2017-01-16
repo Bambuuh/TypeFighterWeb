@@ -42,6 +42,9 @@ input {
     border: none;
     margin-bottom: var(--baseline);
 }
+.create-game-input {
+    display: block;
+}
 
 button {
     display: block;
