@@ -2,14 +2,14 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 const path = require('path');
-const ct = require('./combatTextGenerator');
+import { CombatTextGenerator } from './combatTextGenerator';
 
 
 const app = express();
 const server = http.Server(app);
-const io: SocketIO.Server = socketIO(server);
+export const io: SocketIO.Server = socketIO(server);
 
-const combatTextGenerator = new ct.CombatTextGenerator();
+const combatTextGenerator = new CombatTextGenerator();
 
 app.use(express.static('bin'));
 app.use('/root', express.static(path.join(__dirname, '/../..')));

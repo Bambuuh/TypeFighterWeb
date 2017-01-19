@@ -1,4 +1,4 @@
-const uiHandler = new Client.UiHandler();
+const uiHandler = new UiHandler();
 const option = '';
 
 window.onload = () => {
