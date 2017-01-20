@@ -1,5 +1,5 @@
 class Game {
-    private socket;
+    private socket: SocketIOClient.Socket = io.connect('/');
 
     private context: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
@@ -19,37 +19,36 @@ class Game {
 
         this.player = new Player(this.width, this.height);
         // this.opponent = new Player(this.width, this.height);
-        this.socket = io.connect('/');
+        
+    }
+
+    private setupListeners() {
         this.socket.on('init', (data: string[]) => {
             this.player.getCombatText().setCombatTexts(data);
             this.player.getCombatText().setCurrentCombatText(0);
         });
+
         this.socket.on('update', (data: { player: { index: number }, combatTexts: string[] }) => {
             this.player.getCombatText().setCombatTexts(data.combatTexts);
             this.socket.emit('update', { index: this.player.getIndex() });
         });
-    }
 
-    private connect(action: string, channel: { name: string, password: string }) {
-        let query = 'action=' + action;
-
-        if (!!channel) {
-            query += '&channel=' + channel.name + '&password=' + channel.password;
-        }
-
-        this.socket = io.connect('/', { query: query });
-        // this.socket.on('channel', (data) => this.socket = io.connect(data));
         this.socket.on('joined', () => console.log('a player joined'));
         this.socket.on('disconnect', () => console.log('a player left'));
         this.socket.on('room busy', () => console.log('cant join room'));
-        // this.socket.on('init', (data: string[]) => {
-        //     this.player.getCombatText().setCombatTexts(data);
-        //     this.player.getCombatText().setCurrentCombatText(0);
-        // });
-        // this.socket.on('update', (data: { player:{index: number}, combatTexts: string[] }) => {
-        //     this.player.getCombatText().setCombatTexts(data.combatTexts);
-        //     this.socket.emit('update', {index: this.player.getIndex()});
-        // });
+    }
+
+    private joinServer() {
+        this.socket = io.connect('/');
+        this.setupListeners();
+    }
+
+    public createGame(gameName: string, password: string) {
+        this.socket.emit('create', { gameName: gameName, password: password });
+    }
+
+    public joinGame(gameName: string, password: string) {
+        this.socket.emit('join', { gameName: gameName, password: password });
     }
 
     public start() {
@@ -76,14 +75,6 @@ class Game {
 
     private drawCombo() {
         this.player.draw(this.context, this.width, this.height);
-    }
-
-    public createGame(gameName: string, password: string) {
-        this.connect('create', { name: gameName, password: password });
-    }
-
-    public joinGame(gameName: string, password: string) {
-        this.connect('join', { name: gameName, password: password });
     }
 
     public enterLetter(keycode: number) {

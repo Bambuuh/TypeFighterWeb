@@ -12,41 +12,40 @@ app.use(express.static('bin'));
 app.use('/root', express.static(path.join(__dirname, '/../..')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname + '/../../index.html')));
 exports.io.on('connection', (socket) => {
-    const action = socket.handshake.query.action;
-    const channel = socket.handshake.query.channel;
-    const password = socket.handshake.query.password;
-    console.log(action);
-    if (action === 'create') {
-        if (!exports.io.sockets.adapter.rooms[channel]) {
-            console.log('creating room');
-            socket.join(channel);
-        }
-        else {
-            console.log('room exists');
-            socket.emit('room exists');
-        }
-    }
-    if (action === 'join') {
-        if (!exports.io.sockets.adapter.rooms[channel]) {
+    console.log('connected');
+    socket.on('join', (data) => {
+        console.log('joining');
+        if (!exports.io.sockets.adapter.rooms[data.gameName]) {
             console.log('room doesnt exist');
             socket.emit('room doesnt exist');
         }
-        else if (exports.io.sockets.adapter.rooms[channel].length < 2) {
-            console.log('joining channel');
-            socket.join(channel);
-            exports.io.to(channel).emit('joined', 'someone joined');
-            exports.io.to(channel).on('disconnect', () => {
-                exports.io.to(channel).emit('disconnect');
+        else if (exports.io.sockets.adapter.rooms[data.gameName].length < 2) {
+            console.log('joining ' + data.gameName);
+            socket.join(data.gameName);
+            exports.io.to(data.gameName).emit('joined', 'someone joined');
+            exports.io.to(data.gameName).on('disconnect', () => {
+                exports.io.to(data.gameName).emit('disconnect');
             });
         }
         else {
             console.log('room full');
             socket.emit('room full');
         }
-    }
+    });
+    socket.on('create', (data) => {
+        console.log(data);
+        if (!exports.io.sockets.adapter.rooms[data.gameName]) {
+            console.log('creating room');
+            socket.join(data.gameName);
+        }
+        else {
+            console.log('room exists');
+            socket.emit('room exists');
+        }
+    });
 });
 function update() {
     // io.emit('update', {players: players, combatTexts: combatTextGenerator.getCombatTexts()});
 }
 // setInterval(update.bind(this), 1000 / 30);
-server.listen(8070);
+server.listen(8080);

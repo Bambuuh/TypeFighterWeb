@@ -17,39 +17,38 @@ app.use('/root', express.static(path.join(__dirname, '/../..')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname + '/../../index.html')));
 
 io.on('connection', (socket: SocketIO.Socket) => {
-    const action = socket.handshake.query.action;
-    const channel = socket.handshake.query.channel
-    const password = socket.handshake.query.password;
-
-    console.log(action);
-
-    if(action === 'create') {
-        if (!io.sockets.adapter.rooms[channel]) {
-            console.log('creating room');
-            socket.join(channel);
-        } else {
-            console.log('room exists');
-            socket.emit('room exists');
-        }
-    }
-
-    if (action === 'join') {
-        if (!io.sockets.adapter.rooms[channel]) {
+    console.log('connected');
+    socket.on('join', (data: { gameName: string, password: string }) => {
+        console.log('joining')
+        if (!io.sockets.adapter.rooms[data.gameName]) {
             console.log('room doesnt exist');
             socket.emit('room doesnt exist');
-        } else if (io.sockets.adapter.rooms[channel].length < 2) {
-            console.log('joining channel');
-            socket.join(channel);
-            io.to(channel).emit('joined', 'someone joined');
-            io.to(channel).on('disconnect', () => {
-                io.to(channel).emit('disconnect');
+        } else if (io.sockets.adapter.rooms[data.gameName].length < 2) {
+            console.log('joining ' + data.gameName);
+            socket.join(data.gameName);
+            io.to(data.gameName).emit('joined', 'someone joined');
+            io.to(data.gameName).on('disconnect', () => {
+                io.to(data.gameName).emit('disconnect');
             })
         } else {
             console.log('room full');
             socket.emit('room full');
         }
-    }
-})
+    })
+
+    socket.on('create', (data: { gameName: string, password: string }) => {
+        console.log(data)
+        if (!io.sockets.adapter.rooms[data.gameName]) {
+            console.log('creating room');
+            socket.join(data.gameName);
+        } else {
+            console.log('room exists');
+            socket.emit('room exists');
+        }
+    })
+});
+
+
 
 function update() {
     // io.emit('update', {players: players, combatTexts: combatTextGenerator.getCombatTexts()});
@@ -57,4 +56,4 @@ function update() {
 
 // setInterval(update.bind(this), 1000 / 30);
 
-server.listen(8070);
+server.listen(8080);

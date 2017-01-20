@@ -46,6 +46,7 @@ class UiHandler {
         const gameName = nameInput.value;
         const password = passwordInput.value;
         if (gameName.length > 0) {
+            console.log(gameName, password);
             this.game.createGame(gameName, password);
         }
     }
@@ -72,6 +73,7 @@ class UiHandler {
         const gameName = nameInput.value;
         const password = passwordInput.value;
         if (gameName.length > 0) {
+            console.log(gameName, password);
             this.game.joinGame(gameName, password);
         }
     }
