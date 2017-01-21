@@ -8,20 +8,23 @@ class UiHandler {
 
     public setContainer(container: HTMLDivElement) {
         this.container = container;
-        this.connection.getSocket().on('waiting for player', () => {
-            this.setupWaitingForPlayerState();
-        })
-        this.connection.getSocket().on('match found', () => {
-            this.startGame();
-        })
+        this.connection.getSocket().on('waiting for player', () => this.setupWaitingForPlayerState())
+        this.connection.getSocket().on('match found', () => this.startGame())
+        this.connection.getSocket().on('room doesnt exist', () => this.showMessage("ROOM DOESN'T EXIST"));
+        this.connection.getSocket().on('room exists', () => this.showMessage("ROOM NAME ALREADY EXISTS"));
     }
 
     public setupStartState() {
         this.emptyContainer();
 
+        const quickplayButton = document.createElement('button');
         const createButton = document.createElement('button');
         const joinButton = document.createElement('button');
-        const quickplayButton = document.createElement('button');
+        const soloPlayButton = document.createElement('button')
+
+        quickplayButton.id = "quickplay";
+        quickplayButton.onclick = () => this.connection.quickplay();
+        quickplayButton.innerHTML = "QUICKPLAY";
 
         createButton.id = "create-game";
         createButton.onclick = () => this.setupCreateState();
@@ -31,14 +34,15 @@ class UiHandler {
         joinButton.onclick = () => this.setupJoinState();
         joinButton.innerHTML = "JOIN GAME";
 
-        quickplayButton.id = "quickplay";
-        quickplayButton.onclick = () => this.connection.quickplay();
-        quickplayButton.innerHTML = "QUICKPLAY";
 
+        soloPlayButton.id = "solo-game";
+        soloPlayButton.onclick = () => this.createSoloGame();
+        soloPlayButton.innerHTML = "PLAY SOLO";
 
+        this.container.appendChild(quickplayButton);
         this.container.appendChild(createButton);
         this.container.appendChild(joinButton);
-        this.container.appendChild(quickplayButton);
+        this.container.appendChild(soloPlayButton);
     }
 
     public setupCreateState() {
@@ -106,6 +110,49 @@ class UiHandler {
         squares.forEach(square => spinnerContainer.appendChild(square));
         this.container.appendChild(spinnerContainer);
         this.container.appendChild(waitingText);
+    }
+
+    private showMessage(message: string) {
+        const messageContainer = document.getElementById('message-container');
+        messageContainer.style.display = 'block';
+        messageContainer.innerHTML = message;
+        this.fadeIn(messageContainer);
+        setTimeout(() => {
+            this.fadeOut(messageContainer);
+        }, 3000);
+    }
+
+    private fadeOut(element: HTMLElement) {
+        let opacity = 1;
+        const timer = setInterval(() => {
+            if (opacity <= 0.0) {
+                clearInterval(timer);
+                element.style.display = 'none';
+            }
+
+            element.style.opacity = opacity.toString();
+            element.style.filter = 'alpha(opacity=' + opacity * 100 + ")";
+            opacity -= 0.1;
+        }, 50);
+    }
+
+    private fadeIn(element: HTMLElement) {
+        element.style.opacity = '0';
+        element.style.filter = 'alpha(opacity= 0)';
+        let opacity = 0;
+        const timer = setInterval(() => {
+            if (opacity >= 1) {
+                clearInterval(timer);
+            }
+
+            element.style.opacity = opacity.toString();
+            element.style.filter = 'alpha(opacity=' + opacity * 100 + ")";
+            opacity += 0.1;
+        }, 50);
+    }
+
+    private createSoloGame() {
+        console.log('not yet implemented');
     }
 
     private createGame() {
