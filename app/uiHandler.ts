@@ -1,12 +1,16 @@
 class UiHandler {
 
     private game = new Game();
+    private connection = new ClientConnection();
     private container: HTMLDivElement;
 
     constructor() { }
 
     public setContainer(container: HTMLDivElement) {
         this.container = container;
+        this.connection.getSocket().on('waiting for player', () => {
+            this.setupWaitingForPlayerState();
+        })
     }
 
     public setupStartState() {
@@ -57,17 +61,6 @@ class UiHandler {
         this.container.appendChild(createButton);
     }
 
-    private createGame() {
-        const nameInput = <HTMLInputElement>document.getElementById('game-name-input');
-        const passwordInput = <HTMLInputElement>document.getElementById('game-password-input');
-        const gameName = nameInput.value;
-        const password = passwordInput.value;
-        if (gameName.length > 0) {
-            console.log(gameName, password);
-            this.game.createGame(gameName, password);
-        }
-    }
-
     public setupJoinState() {
         this.emptyContainer();
 
@@ -91,6 +84,38 @@ class UiHandler {
         this.container.appendChild(joinButton);
     }
 
+    public setupWaitingForPlayerState() {
+        this.emptyContainer();
+        const spinnerContainer = document.createElement('div');
+        const waitingText = document.createElement('div');
+
+        spinnerContainer.className = "spinner-container";
+
+        waitingText.innerText = "WAITING FOR ANOTHER PLAYER";
+
+        const squares = [];
+        for (let i = 1; i <= 5; i++) {
+            const square = document.createElement('div');
+            square.className="spinner loading-bar" + i
+            squares.push(square)
+        }
+        
+        squares.forEach(square => spinnerContainer.appendChild(square));
+        this.container.appendChild(spinnerContainer);
+        this.container.appendChild(waitingText);
+    }
+
+    private createGame() {
+        const nameInput = <HTMLInputElement>document.getElementById('game-name-input');
+        const passwordInput = <HTMLInputElement>document.getElementById('game-password-input');
+        const gameName = nameInput.value;
+        const password = passwordInput.value;
+        if (gameName.length > 0) {
+            console.log(gameName, password);
+            this.connection.createGame(gameName, password);
+        }
+    }
+
     private joinGame() {
         const nameInput = <HTMLInputElement>document.getElementById('game-name-input');
         const passwordInput = <HTMLInputElement>document.getElementById('game-password-input');
@@ -98,7 +123,7 @@ class UiHandler {
         const password = passwordInput.value;
         if (gameName.length > 0) {
             console.log(gameName, password);
-            this.game.joinGame(gameName, password);
+            this.connection.joinGame(gameName, password);
         }
     }
 

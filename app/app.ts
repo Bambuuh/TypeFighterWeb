@@ -1,4 +1,6 @@
 const uiHandler = new UiHandler();
+const connection = new ClientConnection();
+
 const option = '';
 
 window.onload = () => {
