@@ -6,31 +6,17 @@ class Game {
     private height: number;
 
     private player: Player;
-    // private opponent: Player;
 
     constructor() { }
 
-    public init(canvas: HTMLCanvasElement, option: string) {
+    public init(canvas: HTMLCanvasElement) {
         this.context = canvas.getContext('2d');
         this.canvas = canvas;
         this.width = this.canvas.width;
         this.height = this.canvas.height;
 
         this.player = new Player(this.width, this.height);
-        // this.opponent = new Player(this.width, this.height);
         
-    }
-
-    private setupListeners() {
-
-        this.connection.getSocket().on('update', (data: { player: { index: number }, combatTexts: string[] }) => {
-            this.player.getCombatText().setCombatTexts(data.combatTexts);
-            this.connection.getSocket().emit('update', { index: this.player.getIndex() });
-        });
-
-        this.connection.getSocket().on('joined', () => console.log('a player joined'));
-        this.connection.getSocket().on('disconnect', () => console.log('a player left'));
-        this.connection.getSocket().on('room busy', () => console.log('cant join room'));
     }
 
     public start() {

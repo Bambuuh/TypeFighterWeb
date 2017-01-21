@@ -31,6 +31,10 @@ class ClientConnection {
         this.socket.emit('join', { gameName: gameName, password: password });
     }
 
+    public quickplay() {
+        this.socket.emit('quickplay');
+    }
+
     public requestNumberOfConnections() {
         this.socket.emit('get active connections');
     }

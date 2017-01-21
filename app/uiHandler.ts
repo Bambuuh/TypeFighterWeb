@@ -11,6 +11,9 @@ class UiHandler {
         this.connection.getSocket().on('waiting for player', () => {
             this.setupWaitingForPlayerState();
         })
+        this.connection.getSocket().on('match found', () => {
+            this.startGame();
+        })
     }
 
     public setupStartState() {
@@ -29,7 +32,7 @@ class UiHandler {
         joinButton.innerHTML = "JOIN GAME";
 
         quickplayButton.id = "quickplay";
-        quickplayButton.onclick = () => console.log('quickplay');
+        quickplayButton.onclick = () => this.connection.quickplay();
         quickplayButton.innerHTML = "QUICKPLAY";
 
 
@@ -152,10 +155,10 @@ class UiHandler {
         }
     }
 
-    private startGame(option: string) {
+    private startGame() {
         this.setupGameState();
         const canvas = <HTMLCanvasElement>document.getElementById('canvas');
-        this.game.init(canvas, option);
+        this.game.init(canvas);
         this.game.start();
 
         window.onkeydown = (event) => {
