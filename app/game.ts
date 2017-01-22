@@ -6,17 +6,29 @@ class Game {
     private height: number;
 
     private player: Player;
+    private opponent: Player;
 
     constructor() { }
 
-    public init(canvas: HTMLCanvasElement) {
-        this.context = canvas.getContext('2d');
-        this.canvas = canvas;
+    public init() {
+        this.canvas = <HTMLCanvasElement>document.getElementById('canvas');
+        this.context = this.canvas.getContext('2d');
         this.width = this.canvas.width;
         this.height = this.canvas.height;
 
+        window.onkeydown = (event) => {
+            this.enterLetter(event.keyCode);
+        }
+    }
+
+    public kill() {
+        window.onkeydown = null;
+    }
+
+    public createSoloGame() {
+        this.init();
         this.player = new Player(this.width, this.height);
-        
+        this.start();
     }
 
     public start() {

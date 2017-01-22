@@ -1,14 +1,19 @@
 class ClientConnection {
 
     private socket: SocketIOClient.Socket;
+    private static _instance = new ClientConnection();
 
     constructor() {
         this.connectToServer();
     }
 
+    public static getInstance() {
+        return this._instance;
+    }
+
     public connectToServer() {
         console.log('creating')
-        this.socket = io.connect('/');
+        this.socket = io();
         this.socket.on('active connections', data => {
             console.log('reciving')
             console.log(data)
@@ -21,6 +26,10 @@ class ClientConnection {
 
     public getSocket() {
         return this.socket;
+    }
+
+    public killAll() {
+        this.socket.emit('kill all');
     }
 
     public createGame(gameName: string, password: string) {

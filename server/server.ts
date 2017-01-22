@@ -3,6 +3,14 @@ interface GameData {
     password: string;
 }
 
+interface GameRoom {
+    active: boolean;
+    players: string[];
+    combatTextGenerator: CombatTextGenerator;
+    quickplay?: boolean;
+    password?: string;
+}
+
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -15,7 +23,7 @@ export const io: SocketIO.Server = socketIO(server);
 
 const combatTextGenerator = new CombatTextGenerator();
 
-const quickplayGames: {[key: string]: {active: boolean, players: number}} = {};
+const games: {[gameID: string]: GameRoom} = {};
 
 app.use(express.static('bin'));
 app.use('/root', express.static(path.join(__dirname, '/../..')));
@@ -27,78 +35,107 @@ io.on('connection', (socket: SocketIO.Socket) => {
     socket.emit('total connected', Object.keys(io.sockets.sockets).length);
 
     socket.on('join', (gameData: GameData) => joinGame(socket, gameData));
-    socket.on('create', (gameData: GameData) => createGame(socket, gameData));
+    socket.on('create', (gameData: GameData) => {
+        createGame(socket, gameData)
+    });
     socket.on('quickplay', () => quickPlay(socket));
+    socket.on('play solo', () => playSolo(socket))
+    socket.on('kill all', () => killAll(socket));
+
+    socket.on('disconnect', () => tryRemoveRooms(socket));
 });
 
-function quickPlay(socket) {
-    console.log('quickplay');
+function joinGame(socket: SocketIO.Socket, gameData: GameData) {
+    if (!io.sockets.adapter.rooms[gameData.gameName]) {
+        socket.emit('room doesnt exist');
+    } else if (io.sockets.adapter.rooms[gameData.gameName].length < 2) {
+        if (games[gameData.gameName].password === gameData.password) {
+            socket.join(gameData.gameName);
+            io.to(gameData.gameName).emit('match found');
+            io.to(gameData.gameName).on('disconnect', () => {
+                io.to(gameData.gameName).emit('disconnect');
+            })
+        } else {
+            socket.emit('wrong password');
+        }
+    } else {
+        socket.emit('room full');
+    }
+}
+
+function createGame(socket: SocketIO.Socket, gameData: GameData) {
+    if (!io.sockets.adapter.rooms[gameData.gameName]) {
+        games[gameData.gameName] = {
+            players: [socket.id],
+            active: false,
+            combatTextGenerator: new CombatTextGenerator(),
+            password: gameData.password,
+        }
+        socket.join(gameData.gameName);
+        socket.emit('waiting for player');
+    } else {
+        socket.emit('room exists');
+    }
+}
+
+function quickPlay(socket: SocketIO.Socket) {
     let joined = false;
-    let roomName = '';
-    for (roomName in quickplayGames) {
-        const game = quickplayGames[roomName];
-        if (!game.active && game.players < 2) {
-            socket.join(roomName);
+    let id = '';
+    for (id in games) {
+        const game = games[id];
+        if (!game.active && game.players.length < 2) {
+            socket.join(id);
             game.active = true;
-            game.players++;
-            io.to(roomName).emit('match found');
+            game.players.push(socket.id);
+            io.to(id).emit('match found');
             joined = true;
             break;
         }
     }
 
     if(!joined) {
-        roomName = new Date().getTime() + Math.random().toString(36).substring(7);
-        quickplayGames[roomName] = {active: false, players: 1};
-        socket.join(roomName);
+        id = new Date().getTime() + Math.random().toString(36).substring(7);
+        games[id] = {
+            active: false,
+            players: [socket.id],
+            quickplay: true,
+            combatTextGenerator: new CombatTextGenerator(),
+        };
+        socket.join(id);
         socket.emit('waiting for player');
     }
+}
 
-    socket.on('disconnect', () => {
-        const game = quickplayGames[roomName];
-        game.players--;
-        if(!game.active || game.players === 0) {
-            delete quickplayGames[roomName];
+function playSolo(socket: SocketIO.Socket) {
+    combatTextGenerator.getCombatTexts();
+}
+
+function killAll(socket: SocketIO.Socket) {
+    socket.leaveAll();
+    tryRemoveRooms(socket);
+}
+
+function tryRemoveRooms(socket: SocketIO.Socket) {
+    for (const id in games) {
+        const game = games[id];
+        const index = game.players.indexOf(socket.id);
+        if(index > -1) {
+            game.players.splice(index, 1);
         }
-    })
-
-}
-
-
-function joinGame(socket, gameData: GameData) {
-    console.log('joining')
-    if (!io.sockets.adapter.rooms[gameData.gameName]) {
-        console.log('room doesnt exist');
-        socket.emit('room doesnt exist');
-    } else if (io.sockets.adapter.rooms[gameData.gameName].length < 2) {
-        console.log('joining ' + gameData.gameName);
-        socket.join(gameData.gameName);
-        io.to(gameData.gameName).emit('match found');
-        io.to(gameData.gameName).on('disconnect', () => {
-            io.to(gameData.gameName).emit('disconnect');
-        })
-    } else {
-        console.log('room full');
-        socket.emit('room full');
+        if (game.players.length === 0) {
+            delete games[id];
+        }
     }
 }
 
-function createGame(socket, gameData: GameData) {
-    console.log(gameData)
-    if (!io.sockets.adapter.rooms[gameData.gameName]) {
-        console.log('creating room');
-        socket.join(gameData.gameName);
-        socket.emit('waiting for player');
-    } else {
-        console.log('room exists');
-        socket.emit('room exists');
-    }
+function activePlayers() {
+    io.emit('client count', io.engine.clientsCount);
 }
 
 // function update() {
 // io.emit('update', {players: players, combatTexts: combatTextGenerator.getCombatTexts()});
 // }
 
-// setInterval(update.bind(this), 1000 / 30);
+setInterval(activePlayers.bind(this), 1000);
 
 server.listen(8080);

@@ -1,24 +1,34 @@
 class UiHandler {
 
     private game = new Game();
-    private connection = new ClientConnection();
+    private connection = ClientConnection.getInstance();
     private container: HTMLDivElement;
 
-    private fadeInTimer;
-    private fadeOutTimer;
+    private fadeInInterval;
+    private fadeOutInterval;
+    private fadeOutTimeout;
+
+    private count = 0;
 
     constructor() { }
 
     public setContainer(container: HTMLDivElement) {
         this.container = container;
+        this.connection.getSocket().on('client count', count => {
+            if (this.count !== count) {
+                this.count = count
+                this.setPlayerCount();
+            }
+        });
         this.connection.getSocket().on('waiting for player', () => this.setupWaitingForPlayerState())
         this.connection.getSocket().on('match found', () => this.startGame())
         this.connection.getSocket().on('room doesnt exist', () => this.showMessage("ROOM DOESN'T EXIST"));
         this.connection.getSocket().on('room exists', () => this.showMessage("ROOM NAME ALREADY EXISTS"));
+        this.connection.getSocket().on('wrong password', () => this.showMessage("INCORRECT PASSWORD"));
     }
 
     public setupStartState() {
-        this.emptyContainer();
+        this.clearUIState();
 
         const quickplayButton = document.createElement('button');
         const createButton = document.createElement('button');
@@ -49,7 +59,7 @@ class UiHandler {
     }
 
     public setupCreateState() {
-        this.emptyContainer();
+        this.clearUIState();
 
         const inputNameField = document.createElement('input');
         const inputPasswordField = document.createElement('input');
@@ -72,7 +82,7 @@ class UiHandler {
     }
 
     public setupJoinState() {
-        this.emptyContainer();
+        this.clearUIState();
 
         const inputNameField = document.createElement('input');
         const inputPasswordField = document.createElement('input');
@@ -94,8 +104,12 @@ class UiHandler {
         this.container.appendChild(joinButton);
     }
 
+    private setPlayerCount() {
+        console.log(this.count);
+    }
+
     public setupWaitingForPlayerState() {
-        this.emptyContainer();
+        this.clearUIState();
         const spinnerContainer = document.createElement('div');
         const waitingText = document.createElement('div');
 
@@ -116,21 +130,22 @@ class UiHandler {
     }
 
     private showMessage(message: string) {
+        clearTimeout(this.fadeOutTimeout)
         const messageContainer = document.getElementById('message-container');
         messageContainer.style.display = 'block';
         messageContainer.innerHTML = message;
         this.fadeIn(messageContainer);
-        setTimeout(() => {
+        this.fadeOutTimeout = setTimeout(() => {
             this.fadeOut(messageContainer);
         }, 3000);
     }
 
     private fadeOut(element: HTMLElement) {
-        clearInterval(this.fadeOutTimer);
+        clearInterval(this.fadeOutInterval);
         let opacity = 1;
-        this.fadeOutTimer = setInterval(() => {
+        this.fadeOutInterval = setInterval(() => {
             if (opacity <= 0.0) {
-                clearInterval(this.fadeOutTimer);
+                clearInterval(this.fadeOutInterval);
                 element.style.display = 'none';
             }
 
@@ -141,13 +156,13 @@ class UiHandler {
     }
 
     private fadeIn(element: HTMLElement) {
-        clearInterval(this.fadeInTimer)
+        clearInterval(this.fadeInInterval)
         element.style.opacity = '0';
         element.style.filter = 'alpha(opacity= 0)';
         let opacity = 0;
-        this.fadeInTimer = setInterval(() => {
+        this.fadeInInterval = setInterval(() => {
             if (opacity >= 1) {
-                clearInterval(this.fadeInTimer);
+                clearInterval(this.fadeInInterval);
             }
 
             element.style.opacity = opacity.toString();
@@ -157,7 +172,8 @@ class UiHandler {
     }
 
     private createSoloGame() {
-        console.log('not yet implemented');
+        this.setupGameState();
+        this.game.createSoloGame();
     }
 
     private createGame() {
@@ -191,7 +207,7 @@ class UiHandler {
     }
 
     public setupGameState() {
-        this.emptyContainer();
+        this.clearUIState();
 
         const canvas = document.createElement('canvas');
         canvas.width = 800;
@@ -201,20 +217,21 @@ class UiHandler {
         this.container.appendChild(canvas);
     }
 
-    private emptyContainer() {
+    private clearUIState() {
+        document.getElementById('message-container').innerHTML = '';
         while (this.container.hasChildNodes()) {
             this.container.removeChild(this.container.firstChild);
         }
     }
 
     private startGame() {
-        this.setupGameState();
-        const canvas = <HTMLCanvasElement>document.getElementById('canvas');
-        this.game.init(canvas);
-        this.game.start();
+        // this.setupGameState();
+        // const canvas = <HTMLCanvasElement>document.getElementById('canvas');
+        // this.game.init(canvas);
+        // this.game.start();
 
-        window.onkeydown = (event) => {
-            this.game.enterLetter(event.keyCode);
-        }
+        // window.onkeydown = (event) => {
+        //     this.game.enterLetter(event.keyCode);
+        // }
     }
 }
