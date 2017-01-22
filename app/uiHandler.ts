@@ -1,6 +1,6 @@
 class UiHandler {
 
-    private game = new Game();
+    private game = Game.getInstance();
     private connection = ClientConnection.getInstance();
     private container: HTMLDivElement;
 
@@ -172,19 +172,13 @@ class UiHandler {
         }, 50);
     }
 
-    private createSoloGame() {
-        this.setupGameState();
-        this.game.createSoloGame();
-    }
-
     private createGame() {
         const nameInput = <HTMLInputElement>document.getElementById('game-name-input');
         const passwordInput = <HTMLInputElement>document.getElementById('game-password-input');
         const gameName = nameInput.value;
         const password = passwordInput.value;
         if (gameName.length > 0) {
-            console.log(gameName, password);
-            this.connection.createGame(gameName, password);
+            this.connection.createMultiplayerGame(gameName, password);
         }
     }
 
@@ -194,8 +188,7 @@ class UiHandler {
         const gameName = nameInput.value;
         const password = passwordInput.value;
         if (gameName.length > 0) {
-            console.log(gameName, password);
-            this.connection.joinGame(gameName, password);
+            this.connection.joinMultiPlayerGame(gameName, password);
         }
     }
 
@@ -223,6 +216,11 @@ class UiHandler {
         while (this.container.hasChildNodes()) {
             this.container.removeChild(this.container.firstChild);
         }
+    }
+
+    private createSoloGame() {
+        this.setupGameState();
+        this.game.createSoloGame();
     }
 
     private startGame() {

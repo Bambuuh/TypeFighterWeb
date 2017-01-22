@@ -26,7 +26,7 @@ export class CombatTextGenerator {
         return this.activeCombos[index];
     }
 
-    public getCombatTexts() {
-        return this.combatTexts;
+    public getActiveCombos() {
+        return this.activeCombos;
     }
 }

@@ -5,10 +5,12 @@ interface GameData {
 
 interface GameRoom {
     active: boolean;
-    players: string[];
+    players: {[id: string]: {index: number}};
     combatTextGenerator: CombatTextGenerator;
+    loopInterval: any,
     quickplay?: boolean;
     password?: string;
+    solo?: boolean,
 }
 
 const express = require('express');
@@ -32,29 +34,29 @@ app.use('/assets', express.static(path.join(__dirname, '/../../assets')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname + '/../../index.html')));
 
 io.on('connection', (socket: SocketIO.Socket) => {
-    socket.emit('total connected', Object.keys(io.sockets.sockets).length);
+    socket.emit('client count', io.engine.clientsCount);
 
-    socket.on('join', (gameData: GameData) => joinGame(socket, gameData));
-    socket.on('create', (gameData: GameData) => {
-        createGame(socket, gameData)
-    });
+    socket.on('join multiplayer', (gameData: GameData) => joinGame(socket, gameData));
+    socket.on('create multiplayer', (gameData: GameData) => createGame(socket, gameData));
     socket.on('quickplay', () => quickPlay(socket));
-    socket.on('play solo', () => playSolo(socket))
+    socket.on('create solo game', () => playSolo(socket))
     socket.on('kill all', () => killAll(socket));
 
     socket.on('disconnect', () => tryRemoveRooms(socket));
 });
 
 function joinGame(socket: SocketIO.Socket, gameData: GameData) {
-    if (!io.sockets.adapter.rooms[gameData.gameName]) {
+    const game = games[gameData.gameName]
+    if (! game|| game.solo) {
         socket.emit('room doesnt exist');
-    } else if (io.sockets.adapter.rooms[gameData.gameName].length < 2) {
-        if (games[gameData.gameName].password === gameData.password) {
+    } else if (Object.keys(game.players).length < 2) {
+        if (game.password === gameData.password) {
             socket.join(gameData.gameName);
             io.to(gameData.gameName).emit('match found');
             io.to(gameData.gameName).on('disconnect', () => {
                 io.to(gameData.gameName).emit('disconnect');
             })
+            console.log('joining');
         } else {
             socket.emit('wrong password');
         }
@@ -66,13 +68,15 @@ function joinGame(socket: SocketIO.Socket, gameData: GameData) {
 function createGame(socket: SocketIO.Socket, gameData: GameData) {
     if (!io.sockets.adapter.rooms[gameData.gameName]) {
         games[gameData.gameName] = {
-            players: [socket.id],
+            players: {[socket.id]: {index: 0}},
             active: false,
             combatTextGenerator: new CombatTextGenerator(),
             password: gameData.password,
+            loopInterval: undefined,
         }
         socket.join(gameData.gameName);
         socket.emit('waiting for player');
+        console.log('creating')
     } else {
         socket.emit('room exists');
     }
@@ -83,10 +87,11 @@ function quickPlay(socket: SocketIO.Socket) {
     let id = '';
     for (id in games) {
         const game = games[id];
-        if (!game.active && game.players.length < 2) {
+        if (!!game && !game.active && Object.keys(game.players).length < 2) {
+            console.log('joining');
             socket.join(id);
             game.active = true;
-            game.players.push(socket.id);
+            game.players[socket.id] = { index: 0};
             io.to(id).emit('match found');
             joined = true;
             break;
@@ -94,12 +99,14 @@ function quickPlay(socket: SocketIO.Socket) {
     }
 
     if(!joined) {
+        console.log('creating');
         id = new Date().getTime() + Math.random().toString(36).substring(7);
         games[id] = {
             active: false,
-            players: [socket.id],
+            players: {[socket.id]: { index: 0 }}, 
             quickplay: true,
             combatTextGenerator: new CombatTextGenerator(),
+            loopInterval: undefined,
         };
         socket.join(id);
         socket.emit('waiting for player');
@@ -107,7 +114,27 @@ function quickPlay(socket: SocketIO.Socket) {
 }
 
 function playSolo(socket: SocketIO.Socket) {
-    combatTextGenerator.getCombatTexts();
+    games[socket.id] = {
+        active: true,
+        players: {[socket.id]: {index: 0}},
+        combatTextGenerator: new CombatTextGenerator(),
+        loopInterval: setInterval((activePlayers) => {
+            if (!!games[socket.id]) {
+                socket.emit('solo update', games[socket.id].combatTextGenerator.getActiveCombos());
+            }
+        }, 1000),
+    };
+
+    socket.emit('init solo', games[socket.id].combatTextGenerator.getActiveCombos());
+
+    socket.on('solo update', (index: number) => {
+        console.log(index);
+    });
+
+    socket.on('stop solo', () => {
+        socket.removeAllListeners('solo update');
+        socket.leave(socket.id);
+    });
 }
 
 function killAll(socket: SocketIO.Socket) {
@@ -118,11 +145,12 @@ function killAll(socket: SocketIO.Socket) {
 function tryRemoveRooms(socket: SocketIO.Socket) {
     for (const id in games) {
         const game = games[id];
-        const index = game.players.indexOf(socket.id);
-        if(index > -1) {
-            game.players.splice(index, 1);
+        const player = game.players[socket.id];
+        if(typeof player !== 'undefined') {
+            delete game.players[socket.id];
         }
-        if (game.players.length === 0) {
+        if (Object.keys(game.players).length === 0) {
+            clearInterval(games[id].loopInterval);
             delete games[id];
         }
     }
@@ -132,10 +160,6 @@ function activePlayers() {
     io.emit('client count', io.engine.clientsCount);
 }
 
-// function update() {
-// io.emit('update', {players: players, combatTexts: combatTextGenerator.getCombatTexts()});
-// }
-
-setInterval(activePlayers.bind(this), 1000);
+setInterval(activePlayers.bind(this), 3000);
 
 server.listen(8080);

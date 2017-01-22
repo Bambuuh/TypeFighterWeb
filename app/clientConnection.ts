@@ -12,16 +12,7 @@ class ClientConnection {
     }
 
     public connectToServer() {
-        console.log('creating')
         this.socket = io();
-        this.socket.on('active connections', data => {
-            console.log('reciving')
-            console.log(data)
-        });
-    }
-
-    public log() {
-        console.log('cme')
     }
 
     public getSocket() {
@@ -30,14 +21,24 @@ class ClientConnection {
 
     public killAll() {
         this.socket.emit('kill all');
+        // this.socket.removeEventListener('solo update');
     }
 
-    public createGame(gameName: string, password: string) {
-        this.socket.emit('create', { gameName: gameName, password: password });
+    public createSoloGame() {
+        this.socket.emit('create solo game')
     }
 
-    public joinGame(gameName: string, password: string) {
-        this.socket.emit('join', { gameName: gameName, password: password });
+    public stopSoloGame() {
+        this.socket.emit('stop solo');
+        // this.socket.removeEventListener('solo update');
+    }
+
+    public createMultiplayerGame(gameName: string, password: string) {
+        this.socket.emit('create multiplayer', { gameName: gameName, password: password });
+    }
+
+    public joinMultiPlayerGame(gameName: string, password: string) {
+        this.socket.emit('join multiplayer', { gameName: gameName, password: password });
     }
 
     public quickplay() {

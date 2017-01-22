@@ -1,5 +1,8 @@
 class Game {
 
+    private static _instance = new Game()
+
+    private connection = ClientConnection.getInstance();
     private context: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
     private width: number;
@@ -10,25 +13,48 @@ class Game {
 
     constructor() { }
 
+    public static getInstance() {
+        return this._instance;
+    }
+
     public init() {
+        this.activeKeyListner();
         this.canvas = <HTMLCanvasElement>document.getElementById('canvas');
         this.context = this.canvas.getContext('2d');
         this.width = this.canvas.width;
         this.height = this.canvas.height;
+    }
 
+    public activeKeyListner() {
         window.onkeydown = (event) => {
             this.enterLetter(event.keyCode);
         }
     }
 
-    public kill() {
+    public stopKeyListner() {
         window.onkeydown = null;
     }
 
     public createSoloGame() {
+        this.player = new Player(this.width, this.height);
+        this.connection.createSoloGame();
+        this.connection.getSocket().on('init solo', (comboTexts: string[]) => {
+            this.player.getCombatText().setCombatTexts(comboTexts);
+            this.player.getCombatText().setCurrentCombatText(0);
+        })
+        this.connection.getSocket().on('solo update', (comboTexts: string[]) => {
+            this.player.getCombatText().setCombatTexts(comboTexts);
+            this.connection.getSocket().emit('solo update', this.player.getIndex());
+        });
+
         this.init();
         this.player = new Player(this.width, this.height);
         this.start();
+    }
+
+    public stopGame() {
+        this.connection.stopSoloGame();
+        this.stopKeyListner();
     }
 
     public start() {
