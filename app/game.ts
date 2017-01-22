@@ -10,6 +10,7 @@ class Game {
 
     private player: Player;
     private opponent: Player;
+    private timer = 0;
 
     constructor() { }
 
@@ -72,6 +73,7 @@ class Game {
     private render() {
         this.renderBackground();
         this.drawCombo();
+        this.renderTimer()
     }
 
     private renderBackground() {
@@ -82,8 +84,16 @@ class Game {
         this.context.closePath();
     }
 
+    private renderTimer() {
+        const text = '30';
+        const x = (this.width / 2) - (this.context.measureText(text).width / 2);
+        const y = 32 + parseInt(this.context.font);
+        this.context.font = '36pt Akashi';
+        this.context.fillText(text, x, y);
+    }
+
     private drawCombo() {
-        this.player.draw(this.context, this.width, this.height);
+        this.player.draw(this.context, this.timer, this.width, this.height);
     }
 
     public enterLetter(keycode: number) {

@@ -51,16 +51,18 @@ class CombatText {
     }
 
     public draw(context: CanvasRenderingContext2D, font: string, width: number, height: number) {
+        context.font = font;
         this.drawCombo(context, font, width, height);
+        this.drawCompletedCharacters(context, font, width, height);
     }
 
-    private drawCombo(context, font, width, height) {
+    public drawCombo(context, font, width, height) {
         let textHeight = parseInt(context.font);
         let y = Math.floor((height / 2) + (textHeight / 2));
         let x = Math.floor((width / 2) - (context.measureText(this.combatTexts[this.currentIndex]).width / 2));
 
         let letterX = 0;
-        context.font = font;
+        
         this.currentCombatText.forEach(combatLetter => {
             context.fillStyle = combatLetter.done ? 'red' : 'white';
             context.fillText(combatLetter.letter, x + letterX, y);
@@ -74,5 +76,24 @@ class CombatText {
             x = Math.floor((width / 2) - (context.measureText(text).width / 2));
             context.fillText(text, x, y);
         }
+    }
+
+    public drawCPS(context: CanvasRenderingContext2D, timer: number) {
+        timer = timer || 1;
+        const cps = this.completedCharacters > 0 ? (60 / timer * this.completedCharacters): 0;
+        const text = 'CPS: ' + cps;
+        const x = 32;
+        const y = 32 + parseInt(context.font);
+        context.fillStyle = 'white';
+        context.fillText(text, x, y);
+    }
+    //        60 / current time in seconds * completedCharacters
+
+    public drawCompletedCharacters(context: CanvasRenderingContext2D, font: string, width: number, height: number) {
+        const text = 'COMPLETED: ';
+        const x = width - context.measureText(text).width - 75;
+        const y = 32 + parseInt(context.font);
+        context.fillStyle = 'white';
+        context.fillText(text + this.completedCharacters, x, y);
     }
 }
