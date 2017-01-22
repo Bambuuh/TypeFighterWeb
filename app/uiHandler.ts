@@ -14,12 +14,7 @@ class UiHandler {
 
     public setContainer(container: HTMLDivElement) {
         this.container = container;
-        this.connection.getSocket().on('client count', count => {
-            if (this.count !== count) {
-                this.count = count
-                this.setPlayerCount();
-            }
-        });
+        this.connection.getSocket().on('client count', count => this.setPlayerCount(count));
         this.connection.getSocket().on('waiting for player', () => this.setupWaitingForPlayerState())
         this.connection.getSocket().on('match found', () => this.startGame())
         this.connection.getSocket().on('room doesnt exist', () => this.showMessage("ROOM DOESN'T EXIST"));
@@ -104,8 +99,14 @@ class UiHandler {
         this.container.appendChild(joinButton);
     }
 
-    private setPlayerCount() {
-        console.log(this.count);
+    private setPlayerCount(count) {
+        if (this.count === count) {
+            return;
+        }
+
+        this.count = count
+        document.getElementById('player-count').innerHTML = 'CONNECTED PLAYERS: ' + this.count;
+        
     }
 
     public setupWaitingForPlayerState() {

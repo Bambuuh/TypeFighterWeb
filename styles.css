@@ -41,16 +41,27 @@ body, html {
     position: relative;
 }
 
-#home-arrow {
+#topbar {
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     position: absolute;
-    top: var(--double-baseline);
-    left: 52px;
+    top: 0;
+    width: 100%;
+    padding: var(--double-baseline);
+    box-sizing: border-box;
+}
+
+#home-arrow {
+    margin-left: var(--baseline);
+    position: relative;
+    color: black;
     height: var(--input-height);
     background: white;
     text-align: center;
     line-height: var(--input-height);
     padding: 0 var(--baseline);
-    box-sizing: border-box;
     cursor: pointer;
 }
 #home-arrow:after {
