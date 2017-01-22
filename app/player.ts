@@ -6,7 +6,7 @@ class Player {
     private combatText = new CombatText();
     private currentIndex: 0;
 
-    private font = '20pt Georgia';
+    private font = '20pt Akashi';
 
     constructor(width: number, height: number) {
         this.init(width, height);
@@ -17,6 +17,10 @@ class Player {
 
     public getIndex() {
         return this.combatText.getIndex();
+    }
+
+    public getCompletedCharacters() {
+        return this.combatText.getcompletedCharacters();
     }
 
     public getX() {

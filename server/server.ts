@@ -3,11 +3,17 @@ interface GameData {
     password: string;
 }
 
-interface GameRoom {
+interface PlayerData {
+    index: number;
+    completedCharacters: number;
+}
+
+interface Game {
     active: boolean;
-    players: {[id: string]: {index: number}};
+    players: { [id: string]: PlayerData };
     combatTextGenerator: CombatTextGenerator;
     loopInterval: any,
+    highestIndex: number;
     quickplay?: boolean;
     password?: string;
     solo?: boolean,
@@ -25,7 +31,7 @@ export const io: SocketIO.Server = socketIO(server);
 
 const combatTextGenerator = new CombatTextGenerator();
 
-const games: {[gameID: string]: GameRoom} = {};
+const games: { [gameID: string]: Game } = {};
 
 app.use(express.static('bin'));
 app.use('/root', express.static(path.join(__dirname, '/../..')));
@@ -47,7 +53,7 @@ io.on('connection', (socket: SocketIO.Socket) => {
 
 function joinGame(socket: SocketIO.Socket, gameData: GameData) {
     const game = games[gameData.gameName]
-    if (! game|| game.solo) {
+    if (!game || game.solo) {
         socket.emit('room doesnt exist');
     } else if (Object.keys(game.players).length < 2) {
         if (game.password === gameData.password) {
@@ -68,7 +74,8 @@ function joinGame(socket: SocketIO.Socket, gameData: GameData) {
 function createGame(socket: SocketIO.Socket, gameData: GameData) {
     if (!io.sockets.adapter.rooms[gameData.gameName]) {
         games[gameData.gameName] = {
-            players: {[socket.id]: {index: 0}},
+            players: { [socket.id]: { index: 0, completedCharacters: 0 } },
+            highestIndex: 0,
             active: false,
             combatTextGenerator: new CombatTextGenerator(),
             password: gameData.password,
@@ -91,19 +98,20 @@ function quickPlay(socket: SocketIO.Socket) {
             console.log('joining');
             socket.join(id);
             game.active = true;
-            game.players[socket.id] = { index: 0};
+            game.players[socket.id] = { index: 0, completedCharacters: 0 };
             io.to(id).emit('match found');
             joined = true;
             break;
         }
     }
 
-    if(!joined) {
+    if (!joined) {
         console.log('creating');
         id = new Date().getTime() + Math.random().toString(36).substring(7);
         games[id] = {
+            players: { [socket.id]: { index: 0, completedCharacters: 0 } },
+            highestIndex: 0,
             active: false,
-            players: {[socket.id]: { index: 0 }}, 
             quickplay: true,
             combatTextGenerator: new CombatTextGenerator(),
             loopInterval: undefined,
@@ -114,21 +122,29 @@ function quickPlay(socket: SocketIO.Socket) {
 }
 
 function playSolo(socket: SocketIO.Socket) {
+    const tickRate = 100/30;
     games[socket.id] = {
+        players: { [socket.id]: { index: 0, completedCharacters: 0 } },
+        highestIndex: 0,
         active: true,
-        players: {[socket.id]: {index: 0}},
         combatTextGenerator: new CombatTextGenerator(),
         loopInterval: setInterval((activePlayers) => {
             if (!!games[socket.id]) {
                 socket.emit('solo update', games[socket.id].combatTextGenerator.getActiveCombos());
             }
-        }, 1000),
+        }, tickRate),
     };
 
     socket.emit('init solo', games[socket.id].combatTextGenerator.getActiveCombos());
 
-    socket.on('solo update', (index: number) => {
-        console.log(index);
+    socket.on('solo update', (playerData: PlayerData) => {
+        const game = games[socket.id];
+        const player = game.players[socket.id];
+        player.index = playerData.index;
+        if(player.index > game.highestIndex) {
+            game.combatTextGenerator.addCombatText();
+        }
+        player.completedCharacters = playerData.completedCharacters;
     });
 
     socket.on('stop solo', () => {
@@ -146,7 +162,7 @@ function tryRemoveRooms(socket: SocketIO.Socket) {
     for (const id in games) {
         const game = games[id];
         const player = game.players[socket.id];
-        if(typeof player !== 'undefined') {
+        if (typeof player !== 'undefined') {
             delete game.players[socket.id];
         }
         if (Object.keys(game.players).length === 0) {

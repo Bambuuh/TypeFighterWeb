@@ -44,7 +44,10 @@ class Game {
         })
         this.connection.getSocket().on('solo update', (comboTexts: string[]) => {
             this.player.getCombatText().setCombatTexts(comboTexts);
-            this.connection.getSocket().emit('solo update', this.player.getIndex());
+            this.connection.getSocket().emit('solo update', {
+                index: this.player.getIndex(),
+                completedCharacters: this.player.getCompletedCharacters(),
+            });
         });
 
         this.init();

@@ -9,6 +9,7 @@ class CombatText {
     private currentCombatText: CombatLetter[] = [];
 
     private currentIndex = 0;
+    private completedCharacters = 0;
 
     constructor() { }
 
@@ -24,6 +25,10 @@ class CombatText {
         return this.combatTexts
     }
 
+    public getcompletedCharacters() {
+        return this.completedCharacters;
+    }
+
     public setCurrentCombatText(index: number) {
         this.currentCombatText = this.setNewCombatText(this.combatTexts[index]);
     }
@@ -34,7 +39,10 @@ class CombatText {
 
     public enterLetter(letter: string) {
         const nextLetter = this.currentCombatText.find(combatLetter => !combatLetter.done);
-        nextLetter.done = nextLetter.letter.toUpperCase() === letter.toUpperCase();
+        if (nextLetter.letter.toUpperCase() === letter.toUpperCase()) {
+            nextLetter.done = true;
+            this.completedCharacters++;
+        }
 
         if (this.currentIndex < this.combatTexts.length - 1 && this.currentCombatText.every(combatLetter => combatLetter.done)) {
             this.currentIndex++;
@@ -43,11 +51,13 @@ class CombatText {
     }
 
     public draw(context: CanvasRenderingContext2D, font: string, width: number, height: number) {
+        this.drawCombo(context, font, width, height);
+    }
 
+    private drawCombo(context, font, width, height) {
         let textHeight = parseInt(context.font);
         let y = Math.floor((height / 2) + (textHeight / 2));
         let x = Math.floor((width / 2) - (context.measureText(this.combatTexts[this.currentIndex]).width / 2));
-
 
         let letterX = 0;
         context.font = font;
