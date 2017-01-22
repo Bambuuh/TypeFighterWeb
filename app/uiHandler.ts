@@ -4,6 +4,9 @@ class UiHandler {
     private connection = new ClientConnection();
     private container: HTMLDivElement;
 
+    private fadeInTimer;
+    private fadeOutTimer;
+
     constructor() { }
 
     public setContainer(container: HTMLDivElement) {
@@ -123,10 +126,11 @@ class UiHandler {
     }
 
     private fadeOut(element: HTMLElement) {
+        clearInterval(this.fadeOutTimer);
         let opacity = 1;
-        const timer = setInterval(() => {
+        this.fadeOutTimer = setInterval(() => {
             if (opacity <= 0.0) {
-                clearInterval(timer);
+                clearInterval(this.fadeOutTimer);
                 element.style.display = 'none';
             }
 
@@ -137,12 +141,13 @@ class UiHandler {
     }
 
     private fadeIn(element: HTMLElement) {
+        clearInterval(this.fadeInTimer)
         element.style.opacity = '0';
         element.style.filter = 'alpha(opacity= 0)';
         let opacity = 0;
-        const timer = setInterval(() => {
+        this.fadeInTimer = setInterval(() => {
             if (opacity >= 1) {
-                clearInterval(timer);
+                clearInterval(this.fadeInTimer);
             }
 
             element.style.opacity = opacity.toString();
