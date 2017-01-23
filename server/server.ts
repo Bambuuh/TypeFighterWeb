@@ -142,7 +142,6 @@ function playSolo(socket: SocketIO.Socket) {
         const player = game.players[socket.id];
         player.index = playerData.index;
         if(player.index > game.highestIndex) {
-            console.log('adding');
             game.highestIndex = player.index;
             game.combatTextGenerator.addCombatText();
         }
