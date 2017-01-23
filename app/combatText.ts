@@ -50,12 +50,6 @@ class CombatText {
         }
     }
 
-    public draw(context: CanvasRenderingContext2D, font: string, width: number, height: number) {
-        context.font = font;
-        this.drawCombo(context, font, width, height);
-        this.drawCompletedCharacters(context, font, width, height);
-    }
-
     public drawCombo(context, font, width, height) {
         let textHeight = parseInt(context.font);
         let y = Math.floor((height / 2) + (textHeight / 2));
@@ -78,33 +72,32 @@ class CombatText {
         }
     }
 
-    public drawCPS(context: CanvasRenderingContext2D, timer: number) {
+    public drawScore(context: CanvasRenderingContext2D) {
         context.fillStyle = 'white';
-        timer = timer || 1;
-        const cps = this.completedCharacters > 0 ? (60 / timer * this.completedCharacters): 0;
-        const text = 'CPS';
+        const text = 'SCORE';
         const x = 32;
-        let y = 32 + parseInt(context.font);
-
+        let y = 16 + parseInt(context.font);
         context.fillText(text, x, y);
 
         y += 32;
-        context.fillText(cps, x, y);
+        context.fillText(this.completedCharacters.toString(), x, y);
     }
     //        60 / current time in seconds * completedCharacters
 
-    public drawCompletedCharacters(context: CanvasRenderingContext2D, font: string, width: number, height: number) {
+    public drawCPS(context: CanvasRenderingContext2D, timer: number, width: number) {
         context.fillStyle = 'white';
-        const text = 'SCORE';
+        timer = timer || 1;        
+        const text = 'CPS';
+        const cps = this.completedCharacters > 0 ? Math.floor((60 / (30 - timer) * this.completedCharacters)): 0;
         const textHeight = parseInt(context.font);
         let x = width - context.measureText(text).width - 32;
-        let y = 32 + textHeight;
+        let y = 16 + textHeight;
 
         context.fillText(text, x, y);
 
-        x += context.measureText(text).width - context.measureText(this.completedCharacters).width
+        x += context.measureText(text).width - context.measureText(cps.toString()).width
         y += 32;
 
-        context.fillText(this.completedCharacters, x, y);
+        context.fillText(cps.toString(), x, y);
     }
 }

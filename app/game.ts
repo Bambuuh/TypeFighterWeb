@@ -73,7 +73,7 @@ class Game {
     private render() {
         this.renderBackground();
         this.drawCombo();
-        this.renderTimer()
+        this.drawTimer()
     }
 
     private renderBackground() {
@@ -84,11 +84,11 @@ class Game {
         this.context.closePath();
     }
 
-    private renderTimer() {
+    private drawTimer() {
+        this.context.font = '36pt Akashi';
         const text = '30';
         const x = (this.width / 2) - (this.context.measureText(text).width / 2);
-        const y = 32 + parseInt(this.context.font);
-        this.context.font = '36pt Akashi';
+        const y = 16 + parseInt(this.context.font);
         this.context.fillText(text, x, y);
     }
 

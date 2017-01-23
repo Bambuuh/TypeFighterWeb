@@ -42,7 +42,7 @@ class Player {
     public draw(context: CanvasRenderingContext2D, timer: number, width: number, height: number) {
         context.font = this.font;
         this.drawComboText(context, width, height);
-        this.drawCompletedCharacters(context, width, height);
+        this.drawCompletedCharacters(context, timer, width);
         this.drawCharactersPerSecond(context, timer);
     }
 
@@ -50,11 +50,11 @@ class Player {
         this.combatText.drawCombo(context, this.font, width, height);
     }
 
-    public drawCompletedCharacters(context: CanvasRenderingContext2D, width: number, height: number) {
-        this.combatText.drawCompletedCharacters(context, this.font, width, height);
+    public drawCompletedCharacters(context: CanvasRenderingContext2D, timer: number, width: number) {
+        this.combatText.drawCPS(context, timer, width);
     }
 
     public drawCharactersPerSecond(context: CanvasRenderingContext2D, timer: number) {
-        this.combatText.drawCPS(context, timer);
+        this.combatText.drawScore(context);
     }
 }
