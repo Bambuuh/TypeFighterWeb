@@ -5,6 +5,7 @@ class Player {
 
     private combatText = new CombatText();
     private currentIndex: 0;
+    private cpm = 0;
 
     private font = '20pt Akashi';
 
@@ -31,6 +32,15 @@ class Player {
         return this.y
     }
 
+    public getCPM() {
+        return this.cpm;
+    }
+
+    public setCpm(timer: number) {
+        const completed = this.combatText.getcompletedCharacters()
+        this.cpm = completed > 0 ? Math.floor((60 / (30 - timer) * completed)): 0;
+    }
+
     public getCombatText() {
         return this.combatText;
     }
@@ -40,10 +50,11 @@ class Player {
     }
 
     public draw(context: CanvasRenderingContext2D, timer: number, width: number, height: number) {
+        context.fillStyle = 'white';
         context.font = this.font;
         this.drawComboText(context, width, height);
         this.drawCompletedCharacters(context, timer, width);
-        this.drawCharactersPerSecond(context, timer);
+        this.drawCharactersPerSecond(context, width);
     }
 
     public drawComboText(context: CanvasRenderingContext2D, width: number, height: number) {
@@ -51,10 +62,20 @@ class Player {
     }
 
     public drawCompletedCharacters(context: CanvasRenderingContext2D, timer: number, width: number) {
-        this.combatText.drawCPS(context, timer, width);
+        this.combatText.drawScore(context);
     }
 
-    public drawCharactersPerSecond(context: CanvasRenderingContext2D, timer: number) {
-        this.combatText.drawScore(context);
+    public drawCharactersPerSecond(context: CanvasRenderingContext2D, width:number) {
+        const text = 'CPM';
+        const textHeight = parseInt(context.font);
+        let x = width - context.measureText(text).width - 32;
+        let y = 16 + textHeight;
+
+        context.fillText(text, x, y);
+
+        x += context.measureText(text).width - context.measureText(this.cpm.toString()).width
+        y += 32;
+
+        context.fillText(this.cpm.toString(), x, y);
     }
 }

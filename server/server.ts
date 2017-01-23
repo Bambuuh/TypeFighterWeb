@@ -14,6 +14,7 @@ interface Game {
     combatTextGenerator: CombatTextGenerator;
     loopInterval: any,
     highestIndex: number;
+    timer: Date;
     quickplay?: boolean;
     password?: string;
     solo?: boolean,
@@ -32,6 +33,8 @@ export const io: SocketIO.Server = socketIO(server);
 const combatTextGenerator = new CombatTextGenerator();
 
 const games: { [gameID: string]: Game } = {};
+const tickRate = 1000 / 30;
+
 
 app.use(express.static('bin'));
 app.use('/root', express.static(path.join(__dirname, '/../..')));
@@ -80,6 +83,7 @@ function createGame(socket: SocketIO.Socket, gameData: GameData) {
             combatTextGenerator: new CombatTextGenerator(),
             password: gameData.password,
             loopInterval: undefined,
+            timer: undefined,
         }
         socket.join(gameData.gameName);
         socket.emit('waiting for player');
@@ -115,6 +119,7 @@ function quickPlay(socket: SocketIO.Socket) {
             quickplay: true,
             combatTextGenerator: new CombatTextGenerator(),
             loopInterval: undefined,
+            timer: undefined,
         };
         socket.join(id);
         socket.emit('waiting for player');
@@ -122,26 +127,32 @@ function quickPlay(socket: SocketIO.Socket) {
 }
 
 function playSolo(socket: SocketIO.Socket) {
-    const tickRate = 100/30;
     games[socket.id] = {
         players: { [socket.id]: { index: 0, completedCharacters: 0 } },
         highestIndex: 0,
         active: true,
         combatTextGenerator: new CombatTextGenerator(),
+        timer: new Date(),
         loopInterval: setInterval((activePlayers) => {
             if (!!games[socket.id]) {
-                socket.emit('solo update', games[socket.id].combatTextGenerator.getActiveCombos());
+                socket.emit('solo update', {
+                    combos: games[socket.id].combatTextGenerator.getActiveCombos(),
+                    timer: getCountDown(games[socket.id].timer),
+                });
             }
         }, tickRate),
     };
 
-    socket.emit('init solo', games[socket.id].combatTextGenerator.getActiveCombos());
+    socket.emit('init solo', {
+        combos: games[socket.id].combatTextGenerator.getActiveCombos(),
+        timer: getCountDown(games[socket.id].timer),
+    });
 
     socket.on('solo update', (playerData: PlayerData) => {
         const game = games[socket.id];
         const player = game.players[socket.id];
         player.index = playerData.index;
-        if(player.index > game.highestIndex) {
+        if (player.index > game.highestIndex) {
             game.highestIndex = player.index;
             game.combatTextGenerator.addCombatText();
         }
@@ -151,6 +162,9 @@ function playSolo(socket: SocketIO.Socket) {
     socket.on('stop solo', () => {
         socket.removeAllListeners('solo update');
         socket.leave(socket.id);
+        try {
+            clearInterval(games[socket.id].loopInterval);
+        } catch (e) {}
     });
 }
 
@@ -164,13 +178,22 @@ function tryRemoveRooms(socket: SocketIO.Socket) {
         const game = games[id];
         const player = game.players[socket.id];
         if (typeof player !== 'undefined') {
+            console.log('found room');
             delete game.players[socket.id];
         }
         if (Object.keys(game.players).length === 0) {
-            clearInterval(games[id].loopInterval);
+            try {
+                clearInterval(games[id].loopInterval);
+            } catch (e) {}
             delete games[id];
         }
     }
+}
+
+function getCountDown(timer: Date) {
+    // const countDown = 30.9 - (new Date().getTime() - timer.getTime()) / 1000;
+    const countDown = 3 - (new Date().getTime() - timer.getTime()) / 1000;
+    return countDown >= 0 ? countDown : 0;
 }
 
 function activePlayers() {

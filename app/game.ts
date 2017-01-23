@@ -10,7 +10,10 @@ class Game {
 
     private player: Player;
     private opponent: Player;
-    private timer = 0;
+
+    private running = false;
+
+    private timer = 30;
 
     constructor() { }
 
@@ -19,6 +22,8 @@ class Game {
     }
 
     public init() {
+        this.player = new Player(this.width, this.height);
+        this.timer = 30;
         this.activeKeyListner();
         this.canvas = <HTMLCanvasElement>document.getElementById('canvas');
         this.context = this.canvas.getContext('2d');
@@ -37,14 +42,16 @@ class Game {
     }
 
     public createSoloGame() {
-        this.player = new Player(this.width, this.height);
         this.connection.createSoloGame();
-        this.connection.getSocket().on('init solo', (comboTexts: string[]) => {
-            this.player.getCombatText().setCombatTexts(comboTexts);
+        this.connection.getSocket().on('init solo', (gameData: { combos: string[], timer: number }) => {
+            this.player.getCombatText().setCombatTexts(gameData.combos);
             this.player.getCombatText().setCurrentCombatText(0);
+            this.timer = gameData.timer;
         })
-        this.connection.getSocket().on('solo update', (comboTexts: string[]) => {
-            this.player.getCombatText().setCombatTexts(comboTexts);
+        this.connection.getSocket().on('solo update', (gameData: { combos: string[], timer: number }) => {
+            this.player.getCombatText().setCombatTexts(gameData.combos);
+            this.timer = gameData.timer;
+
             this.connection.getSocket().emit('solo update', {
                 index: this.player.getIndex(),
                 completedCharacters: this.player.getCompletedCharacters(),
@@ -52,7 +59,6 @@ class Game {
         });
 
         this.init();
-        this.player = new Player(this.width, this.height);
         this.start();
     }
 
@@ -62,18 +68,57 @@ class Game {
     }
 
     public start() {
+        this.running = true;
         this.loop();
     }
 
     private loop = () => {
+        if (this.timer >= 1) {
+            this.player.setCpm(this.timer);
+        } else {
+            this.running = false;
+            this.connection.stopSoloGame();
+        }
+
         this.render();
-        requestAnimationFrame(this.loop);
+
+        if (this.running) {
+            requestAnimationFrame(this.loop);
+        }
     }
 
     private render() {
         this.renderBackground();
-        this.drawCombo();
-        this.drawTimer()
+        if (this.timer >= 1) {
+            this.drawPlayer();
+            this.drawTimer();
+        } else {
+            this.drawScore();
+        }
+    }
+
+    private drawScore() {
+        this.context.font = '42pt Akashi';
+        this.context.fillStyle = 'white';
+
+        const halfWidth = (this.width / 2);
+        const halfHeight = (this.height / 2);
+        
+        let text = 'GAME OVER';
+        let x = halfWidth - (this.context.measureText(text).width / 2);
+        let y = (this.height / 4) + (parseInt(this.context.font) / 2);
+        this.context.fillText(text, x, y);
+
+        this.context.font = '28pt Akashi';
+        text = 'SCORE: ' + this.player.getCompletedCharacters();
+        x = halfWidth - (this.context.measureText(text).width / 2);
+        y = halfHeight + (parseInt(this.context.font) / 2);
+        this.context.fillText(text, x, y);
+
+        text = 'CPM: ' + this.player.getCPM();
+        x = halfWidth - (this.context.measureText(text).width / 2);
+        y = halfHeight + (parseInt(this.context.font) / 2) + 64;
+        this.context.fillText(text, x, y);
     }
 
     private renderBackground() {
@@ -86,13 +131,13 @@ class Game {
 
     private drawTimer() {
         this.context.font = '36pt Akashi';
-        const text = '30';
-        const x = (this.width / 2) - (this.context.measureText(text).width / 2);
+        const displayTimer = Math.floor(this.timer);
+        const x = (this.width / 2) - (this.context.measureText(displayTimer.toString()).width / 2);
         const y = 16 + parseInt(this.context.font);
-        this.context.fillText(text, x, y);
+        this.context.fillText(displayTimer.toString(), x, y);
     }
 
-    private drawCombo() {
+    private drawPlayer() {
         this.player.draw(this.context, this.timer, this.width, this.height);
     }
 

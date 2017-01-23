@@ -73,7 +73,6 @@ class CombatText {
     }
 
     public drawScore(context: CanvasRenderingContext2D) {
-        context.fillStyle = 'white';
         const text = 'SCORE';
         const x = 32;
         let y = 16 + parseInt(context.font);
@@ -81,23 +80,5 @@ class CombatText {
 
         y += 32;
         context.fillText(this.completedCharacters.toString(), x, y);
-    }
-    //        60 / current time in seconds * completedCharacters
-
-    public drawCPS(context: CanvasRenderingContext2D, timer: number, width: number) {
-        context.fillStyle = 'white';
-        timer = timer || 1;        
-        const text = 'CPS';
-        const cps = this.completedCharacters > 0 ? Math.floor((60 / (30 - timer) * this.completedCharacters)): 0;
-        const textHeight = parseInt(context.font);
-        let x = width - context.measureText(text).width - 32;
-        let y = 16 + textHeight;
-
-        context.fillText(text, x, y);
-
-        x += context.measureText(text).width - context.measureText(cps.toString()).width
-        y += 32;
-
-        context.fillText(cps.toString(), x, y);
     }
 }
