@@ -65,7 +65,6 @@ function joinGame(socket: SocketIO.Socket, gameData: GameData) {
             io.to(gameData.gameName).on('disconnect', () => {
                 io.to(gameData.gameName).emit('disconnect');
             })
-            console.log('joining');
         } else {
             socket.emit('wrong password');
         }
@@ -87,7 +86,6 @@ function createGame(socket: SocketIO.Socket, gameData: GameData) {
         }
         socket.join(gameData.gameName);
         socket.emit('waiting for player');
-        console.log('creating')
     } else {
         socket.emit('room exists');
     }
@@ -99,7 +97,6 @@ function quickPlay(socket: SocketIO.Socket) {
     for (id in games) {
         const game = games[id];
         if (!!game && !game.active && Object.keys(game.players).length < 2) {
-            console.log('joining');
             socket.join(id);
             game.active = true;
             game.players[socket.id] = { index: 0, completedCharacters: 0 };
@@ -110,7 +107,6 @@ function quickPlay(socket: SocketIO.Socket) {
     }
 
     if (!joined) {
-        console.log('creating');
         id = new Date().getTime() + Math.random().toString(36).substring(7);
         games[id] = {
             players: { [socket.id]: { index: 0, completedCharacters: 0 } },
@@ -178,7 +174,6 @@ function tryRemoveRooms(socket: SocketIO.Socket) {
         const game = games[id];
         const player = game.players[socket.id];
         if (typeof player !== 'undefined') {
-            console.log('found room');
             delete game.players[socket.id];
         }
         if (Object.keys(game.players).length === 0) {
@@ -191,8 +186,8 @@ function tryRemoveRooms(socket: SocketIO.Socket) {
 }
 
 function getCountDown(timer: Date) {
-    // const countDown = 30.9 - (new Date().getTime() - timer.getTime()) / 1000;
-    const countDown = 3 - (new Date().getTime() - timer.getTime()) / 1000;
+    const countDown = 30.9 - (new Date().getTime() - timer.getTime()) / 1000;
+    // const countDown = 3 - (new Date().getTime() - timer.getTime()) / 1000;
     return countDown >= 0 ? countDown : 0;
 }
 
