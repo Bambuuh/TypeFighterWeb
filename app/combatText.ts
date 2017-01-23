@@ -79,21 +79,32 @@ class CombatText {
     }
 
     public drawCPS(context: CanvasRenderingContext2D, timer: number) {
+        context.fillStyle = 'white';
         timer = timer || 1;
         const cps = this.completedCharacters > 0 ? (60 / timer * this.completedCharacters): 0;
-        const text = 'CPS: ' + cps;
+        const text = 'CPS';
         const x = 32;
-        const y = 32 + parseInt(context.font);
-        context.fillStyle = 'white';
+        let y = 32 + parseInt(context.font);
+
         context.fillText(text, x, y);
+
+        y += 32;
+        context.fillText(cps, x, y);
     }
     //        60 / current time in seconds * completedCharacters
 
     public drawCompletedCharacters(context: CanvasRenderingContext2D, font: string, width: number, height: number) {
-        const text = 'COMPLETED: ';
-        const x = width - context.measureText(text).width - 75;
-        const y = 32 + parseInt(context.font);
         context.fillStyle = 'white';
-        context.fillText(text + this.completedCharacters, x, y);
+        const text = 'SCORE';
+        const textHeight = parseInt(context.font);
+        let x = width - context.measureText(text).width - 32;
+        let y = 32 + textHeight;
+
+        context.fillText(text, x, y);
+
+        x += context.measureText(text).width - context.measureText(this.completedCharacters).width
+        y += 32;
+
+        context.fillText(this.completedCharacters, x, y);
     }
 }
