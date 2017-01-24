@@ -1,6 +1,13 @@
+interface ClientGameData {
+    combos: string[];
+    timer: number;
+}
+
 class Game {
 
     private static _instance = new Game()
+
+    private gameName = '';
 
     private connection = ClientConnection.getInstance();
     private context: CanvasRenderingContext2D;
@@ -12,6 +19,7 @@ class Game {
     private opponent: Player;
 
     private running = false;
+    private finalScore: { [id: string]: { cpm: number, completedCharacters: number } } = undefined;
 
     private timer = 30;
 
@@ -22,7 +30,7 @@ class Game {
     }
 
     public init() {
-        this.player = new Player(this.width, this.height);
+        this.player = new Player();
         this.timer = 30;
         this.activeKeyListner();
         this.canvas = <HTMLCanvasElement>document.getElementById('canvas');
@@ -42,28 +50,59 @@ class Game {
     }
 
     public createSoloGame() {
+        this.init();
         this.connection.createSoloGame();
-        this.connection.getSocket().on('init solo', (gameData: { combos: string[], timer: number }) => {
-            this.player.getCombatText().setCombatTexts(gameData.combos);
-            this.player.getCombatText().setCurrentCombatText(0);
+        this.connection.getSocket().on('init solo', (gameData: ClientGameData) => {
+            this.player.init(gameData);
             this.timer = gameData.timer;
         })
-        this.connection.getSocket().on('solo update', (gameData: { combos: string[], timer: number }) => {
+        this.connection.getSocket().on('update', (gameData: ClientGameData) => {
             this.player.getCombatText().setCombatTexts(gameData.combos);
             this.timer = gameData.timer;
 
-            this.connection.getSocket().emit('solo update', {
+            this.connection.getSocket().emit('update', {
                 index: this.player.getIndex(),
                 completedCharacters: this.player.getCompletedCharacters(),
             });
+
+            this.connection.getSocket().on('finalStats', data => {
+                this.running = false;
+                this.finalScore = data;
+            });
         });
 
+        this.start();
+    }
+
+    public createMultiplayerGame(gameData) {
+        this.gameName = gameData;
         this.init();
+
+        this.connection.getSocket().on('initNormal', (gameData: ClientGameData) => {
+            this.player.init(gameData);
+            this.timer = gameData.timer;
+        });
+        this.connection.getSocket().on('update', (gameData: ClientGameData) => {
+            this.player.getCombatText().setCombatTexts(gameData.combos);
+            this.timer = gameData.timer;
+
+            this.connection.getSocket().emit('update', {
+                index: this.player.getIndex(),
+                completedCharacters: this.player.getCompletedCharacters(),
+                cpm: this.player.getCPM(),
+            });
+
+            this.connection.getSocket().on('finalStats', data => {
+                this.running = false;
+                this.finalScore = data;
+            });
+        })
+
         this.start();
     }
 
     public stopGame() {
-        this.connection.stopSoloGame();
+        this.connection.stopGame();
         this.stopKeyListner();
     }
 
@@ -73,11 +112,10 @@ class Game {
     }
 
     private loop = () => {
-        if (this.timer >= 1) {
+        if (this.running) {
             this.player.setCpm(this.timer);
         } else {
-            this.running = false;
-            this.connection.stopSoloGame();
+            this.connection.stopGame();
         }
 
         this.render();
@@ -89,7 +127,7 @@ class Game {
 
     private render() {
         this.renderBackground();
-        if (this.timer >= 1) {
+        if (this.running) {
             this.drawPlayer();
             this.drawTimer();
         } else {
@@ -98,12 +136,64 @@ class Game {
     }
 
     private drawScore() {
+        if (Object.keys(this.finalScore).length === 1) {
+            this.drawSoloScore();
+        } else {
+            this.drawMultiplayerScore();
+        }
+    }
+
+    private drawMultiplayerScore() {
         this.context.font = '42pt Akashi';
         this.context.fillStyle = 'white';
 
         const halfWidth = (this.width / 2);
         const halfHeight = (this.height / 2);
+
+        let text = 'GAME OVER';
+        let x = halfWidth - (this.context.measureText(text).width / 2);
+        let y = (this.height / 4) + (parseInt(this.context.font) / 2);
+        this.context.fillText(text, x, y);
+
+        const socketID = this.connection.getSocket().id;
+
+        let playerOneScore = this.finalScore[socketID];
+        let playerTwoScore;
+
+        for(const key in this.finalScore) {
+            if (key !== socketID) {
+                playerTwoScore = this.finalScore[key];
+            }
+        }
+        const playerOneX = this.width / 4;
+        const playerTwoX = (this.width / 4) * 3;
+        this.drawPlayerScore(playerOneX, halfHeight, playerOneScore);
+        this.drawPlayerScore(playerTwoX, halfHeight, playerTwoScore)
+
+
         
+    }
+
+    private drawPlayerScore(originX: number, originY: number, score: {completedCharacters: number, cpm: number}) {
+        this.context.font = '28pt Akashi';
+        let text = 'SCORE: ' + score.completedCharacters;
+        let x = originX - (this.context.measureText(text).width / 2);
+        let y = originY + (parseInt(this.context.font) / 2);
+        this.context.fillText(text, x, y);
+
+        text = 'CPM: ' + score.cpm;
+        x = originX - (this.context.measureText(text).width / 2);
+        y = originY + (parseInt(this.context.font) / 2) + 64;
+        this.context.fillText(text, x, y);
+    }
+
+    private drawSoloScore() {
+        this.context.font = '42pt Akashi';
+        this.context.fillStyle = 'white';
+
+        const halfWidth = (this.width / 2);
+        const halfHeight = (this.height / 2);
+
         let text = 'GAME OVER';
         let x = halfWidth - (this.context.measureText(text).width / 2);
         let y = (this.height / 4) + (parseInt(this.context.font) / 2);

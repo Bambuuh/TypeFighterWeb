@@ -19,26 +19,28 @@ class ClientConnection {
         return this.socket;
     }
 
-    public killAll() {
-        this.socket.emit('kill all');
-        // this.socket.removeEventListener('solo update');
+    public leaveAll() {
+        this.socket.emit('leaveAllGames');
     }
 
     public createSoloGame() {
         this.socket.emit('create solo game')
     }
 
-    public stopSoloGame() {
-        this.socket.emit('stop solo');
-        // this.socket.removeEventListener('solo update');
+    public createNormalGame() {
+        this.socket.emit('createNormalGame')
     }
 
-    public createMultiplayerGame(gameName: string, password: string) {
-        this.socket.emit('create multiplayer', { gameName: gameName, password: password });
+    public stopGame() {
+        this.socket.emit('stop');
     }
 
-    public joinMultiPlayerGame(gameName: string, password: string) {
-        this.socket.emit('join multiplayer', { gameName: gameName, password: password });
+    public createMultiplayerGame(gameID: string, password: string) {
+        this.socket.emit('create multiplayer', { gameID: gameID, password: password });
+    }
+
+    public joinMultiPlayerGame(gameID: string, password: string) {
+        this.socket.emit('join multiplayer', { gameID: gameID, password: password });
     }
 
     public quickplay() {

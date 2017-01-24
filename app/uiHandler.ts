@@ -16,7 +16,7 @@ class UiHandler {
         this.container = container;
         this.connection.getSocket().on('client count', count => this.setPlayerCount(count));
         this.connection.getSocket().on('waiting for player', () => this.setupWaitingForPlayerState())
-        this.connection.getSocket().on('match found', () => this.startGame())
+        this.connection.getSocket().on('match found', gameData => this.startGame(gameData))
         this.connection.getSocket().on('room doesnt exist', () => this.showMessage("ROOM DOESN'T EXIST"));
         this.connection.getSocket().on('room exists', () => this.showMessage("ROOM NAME ALREADY EXISTS"));
         this.connection.getSocket().on('wrong password', () => this.showMessage("INCORRECT PASSWORD"));
@@ -175,20 +175,20 @@ class UiHandler {
     private createGame() {
         const nameInput = <HTMLInputElement>document.getElementById('game-name-input');
         const passwordInput = <HTMLInputElement>document.getElementById('game-password-input');
-        const gameName = nameInput.value;
+        const gameID = nameInput.value;
         const password = passwordInput.value;
-        if (gameName.length > 0) {
-            this.connection.createMultiplayerGame(gameName, password);
+        if (gameID.length > 0) {
+            this.connection.createMultiplayerGame(gameID, password);
         }
     }
 
     private joinGame() {
         const nameInput = <HTMLInputElement>document.getElementById('game-name-input');
         const passwordInput = <HTMLInputElement>document.getElementById('game-password-input');
-        const gameName = nameInput.value;
+        const gameID = nameInput.value;
         const password = passwordInput.value;
-        if (gameName.length > 0) {
-            this.connection.joinMultiPlayerGame(gameName, password);
+        if (gameID.length > 0) {
+            this.connection.joinMultiPlayerGame(gameID, password);
         }
     }
 
@@ -223,14 +223,8 @@ class UiHandler {
         this.game.createSoloGame();
     }
 
-    private startGame() {
-        // this.setupGameState();
-        // const canvas = <HTMLCanvasElement>document.getElementById('canvas');
-        // this.game.init(canvas);
-        // this.game.start();
-
-        // window.onkeydown = (event) => {
-        //     this.game.enterLetter(event.keyCode);
-        // }
+    private startGame(gameData) {
+        this.setupGameState();
+        this.game.createMultiplayerGame(gameData);
     }
 }

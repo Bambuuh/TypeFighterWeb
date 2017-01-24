@@ -6,7 +6,7 @@ const option = '';
 
 window.onload = () => {
     document.getElementById('home-arrow').onclick = () => {
-        connection.killAll();
+        connection.leaveAll();
         game.stopGame();
         uiHandler.setupStartState()
     };

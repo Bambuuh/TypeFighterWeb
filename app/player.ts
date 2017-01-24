@@ -9,11 +9,11 @@ class Player {
 
     private font = '20pt Akashi';
 
-    constructor(width: number, height: number) {
-        this.init(width, height);
-    }
+    constructor() {}
 
-    public init(width: number, height: number) {
+    public init(gameData: ClientGameData) {
+        this.getCombatText().setCombatTexts(gameData.combos);
+        this.getCombatText().setCurrentCombatText(0);
     };
 
     public getIndex() {
