@@ -19,6 +19,7 @@ interface Game {
     highestIndex: number;
     timer: Date;
     sockets: SocketIO.Socket[];
+    leaver?: boolean;
     quickplay?: boolean;
     password?: string;
     solo?: boolean,
@@ -54,9 +55,6 @@ export class GameHandler {
     }
 
     public createCustomGame(socket: SocketIO.Socket, gameData: GameData) {
-        if (this.io.sockets.adapter.rooms[gameData.gameID]) {
-            console.log(this.io.sockets.adapter.rooms[gameData.gameID].sockets)
-        }
         if (!this.io.sockets.adapter.rooms[gameData.gameID]) {
             this.createGame(socket, gameData);
         } else {
@@ -89,12 +87,10 @@ export class GameHandler {
     }
 
     public startMultiplayerGame(gameID: string) {
-        console.log(gameID);
         const game = this.games[gameID];
         game.active = true;
         game.timer = new Date();
         game.loopInterval = setInterval(() => {
-            console.log('multi');
             if (this.getCountDown(game.timer) <= 0 && game.active) {
                 this.endGame(gameID);
                 game.active = false;
@@ -137,7 +133,6 @@ export class GameHandler {
     }
 
     private createGame(socket: SocketIO.Socket, gameData: GameData, quickplay = false) {
-        console.log(gameData);
         this.games[gameData.gameID] = this.getGameObj(socket);
         const game = this.games[gameData.gameID]
         game.password = gameData.password;
@@ -164,7 +159,6 @@ export class GameHandler {
         game.solo = true;
         game.timer = new Date(),
             game.loopInterval = setInterval(() => {
-                console.log('solo');
                 if (this.getCountDown(game.timer) <= 0 && game.active) {
                     this.endGame(id);
                     game.active = false;
@@ -205,13 +199,12 @@ export class GameHandler {
         socket.leaveAll();
         for (const key in this.games) {
             const game = this.games[key];
-            delete game.players[socket.id];
-            if (Object.keys(game.players).length === 0) {
-                console.log('remobving game');
+            game.sockets = game.sockets.filter(gameSocket => gameSocket.id !== socket.id);
+            if (game.sockets.length === 0) {
                 this.stopGameLoop(this.games[key]);
                 delete this.games[key];
-            } else if (game.active && !game.solo && Object.keys(game.players).length < 2) {
-                console.log('stopping game');
+            } else if (game.active && !game.solo && game.sockets.length < 2) {
+                game.leaver = true;
                 this.endGame(key);
             }
         }
@@ -220,7 +213,7 @@ export class GameHandler {
     private endGame(gameID: string) {
         const game = this.games[gameID]
         this.stopGameLoop(game);
-        this.io.sockets.in(gameID).emit('finalStats', game.players);
+        this.io.sockets.in(gameID).emit('finalStats', { playerStats: game.players, leaver: game.leaver });
     }
 
     private removeGameListeners(socket: SocketIO.Socket) {
@@ -240,8 +233,8 @@ export class GameHandler {
     }
 
     private getCountDown(timer: Date) {
-        // const countDown = 30.9 - (new Date().getTime() - timer.getTime()) / 1000;
-        const countDown = 2 - (new Date().getTime() - timer.getTime()) / 1000;
+        const countDown = 30.9 - (new Date().getTime() - timer.getTime()) / 1000;
+        // const countDown = 2 - (new Date().getTime() - timer.getTime()) / 1000;
         return countDown >= 0 ? countDown : 0;
     }
 }

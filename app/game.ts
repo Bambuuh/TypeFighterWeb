@@ -19,7 +19,10 @@ class Game {
     private opponent: Player;
 
     private running = false;
-    private finalScore: { [id: string]: { cpm: number, completedCharacters: number } } = undefined;
+    private finalScore: {
+        playerStats: { [id: string]: { cpm: number, completedCharacters: number } },
+        leaver: boolean;
+    } = undefined;
 
     private timer = 30;
 
@@ -136,7 +139,7 @@ class Game {
     }
 
     private drawScore() {
-        if (Object.keys(this.finalScore).length === 1) {
+        if (Object.keys(this.finalScore.playerStats).length === 1) {
             this.drawSoloScore();
         } else {
             this.drawMultiplayerScore();
@@ -144,46 +147,65 @@ class Game {
     }
 
     private drawMultiplayerScore() {
+        const socketID = this.connection.getSocket().id;
+        let playerOneScore = this.finalScore.playerStats[socketID];
+        let playerTwoScore;
+
+        for (const key in this.finalScore.playerStats) {
+            if (key !== socketID) {
+                playerTwoScore = this.finalScore.playerStats[key];
+            }
+        }
+
+        let result = '';
+        if (this.finalScore.leaver || playerOneScore.completedCharacters > playerTwoScore.completedCharacters) {
+            result = 'VICTORY';
+        } else if (playerOneScore.completedCharacters < playerTwoScore.completedCharacters) {
+            result = 'DEFEAT';
+        } else {
+            result = 'TIE';
+        }
+
         this.context.font = '42pt Akashi';
         this.context.fillStyle = 'white';
 
         const halfWidth = (this.width / 2);
         const halfHeight = (this.height / 2);
 
-        let text = 'GAME OVER';
-        let x = halfWidth - (this.context.measureText(text).width / 2);
+        let x = halfWidth - (this.context.measureText(result).width / 2);
         let y = (this.height / 4) + (parseInt(this.context.font) / 2);
-        this.context.fillText(text, x, y);
+        this.context.fillText(result, x, y);
 
-        const socketID = this.connection.getSocket().id;
 
-        let playerOneScore = this.finalScore[socketID];
-        let playerTwoScore;
 
-        for(const key in this.finalScore) {
-            if (key !== socketID) {
-                playerTwoScore = this.finalScore[key];
-            }
-        }
         const playerOneX = this.width / 4;
         const playerTwoX = (this.width / 4) * 3;
-        this.drawPlayerScore(playerOneX, halfHeight, playerOneScore);
-        this.drawPlayerScore(playerTwoX, halfHeight, playerTwoScore)
+        this.drawPlayerScore(playerOneX, halfHeight, playerOneScore, 'YOU');
+        this.drawPlayerScore(playerTwoX, halfHeight, playerTwoScore, 'THE OTHER GUY');
 
 
-        
+
     }
 
-    private drawPlayerScore(originX: number, originY: number, score: {completedCharacters: number, cpm: number}) {
+    private drawPlayerScore(originX: number, originY: number, score: { completedCharacters: number, cpm: number }, name: string) {
         this.context.font = '28pt Akashi';
-        let text = 'SCORE: ' + score.completedCharacters;
-        let x = originX - (this.context.measureText(text).width / 2);
+
+        let spacing = 64;
+
+        let x = originX - (this.context.measureText(name).width / 2);
         let y = originY + (parseInt(this.context.font) / 2);
+        this.context.fillText(name, x, y);
+
+        let text = 'SCORE: ' + score.completedCharacters;
+        x = originX - (this.context.measureText(text).width / 2);
+        y = originY + (parseInt(this.context.font) / 2) + spacing;
         this.context.fillText(text, x, y);
+
+        spacing += spacing;
 
         text = 'CPM: ' + score.cpm;
         x = originX - (this.context.measureText(text).width / 2);
-        y = originY + (parseInt(this.context.font) / 2) + 64;
+        y = originY + (parseInt(this.context.font) / 2) + spacing;
         this.context.fillText(text, x, y);
     }
 
