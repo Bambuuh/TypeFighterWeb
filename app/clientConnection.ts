@@ -12,7 +12,7 @@ class ClientConnection {
     }
 
     public connectToServer() {
-        this.socket = io();
+        this.socket = io.connect("http://localhost:8080");
     }
 
     public getSocket() {
