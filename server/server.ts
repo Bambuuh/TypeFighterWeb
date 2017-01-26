@@ -17,20 +17,6 @@ app.use('/assets', express.static(path.join(__dirname, '/../../assets')));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname + '/../../index.html')));
 
-io.on('connection', (socket: SocketIO.Socket) => {
-    socket.emit('client count', io.engine.clientsCount);
-
-    socket.on('join multiplayer', (gameData: GameData) => gameHandler.joinNormalGame(socket, gameData));
-    socket.on('create multiplayer', (gameData: GameData) => gameHandler.createCustomGame(socket, gameData));
-    socket.on('quickplay', () => gameHandler.joinQuickplay(socket));
-    socket.on('create solo game', () => gameHandler.playSolo(socket))
-    socket.on('leaveAllGames', () => gameHandler.leaveAndRemoveGames(socket));
-    socket.on('disconnect', () => gameHandler.leaveAndRemoveGames(socket));
-});
-
-function activePlayers() {
-    io.emit('client count', io.engine.clientsCount);
-}
-setInterval(activePlayers.bind(this), 3000);
+gameHandler.setupEventListner();
 
 server.listen(8080);

@@ -33,9 +33,26 @@ export class GameHandler {
 
     private combatTextGenerator = new CombatTextGenerator();
 
-    constructor(private io: SocketIO.Server) { }
+    constructor(private io: SocketIO.Server) {
+        console.log('test');
+        setInterval(this.emitPlayerCount.bind(this), 3000);
+    }
 
-    public addPlayer(socket: SocketIO.Socket) {
+    private emitPlayerCount() {
+        this.io.emit('client count', this.io.engine.clientsCount);
+    }
+
+    public setupEventListner() {
+        this.io.on('connection', (socket: SocketIO.Socket) => {
+            socket.emit('client count', this.io.engine.clientsCount);
+
+            socket.on('join multiplayer', (gameData: GameData) => this.joinNormalGame(socket, gameData));
+            socket.on('create multiplayer', (gameData: GameData) => this.createCustomGame(socket, gameData));
+            socket.on('quickplay', () => this.joinQuickplay(socket));
+            socket.on('create solo game', () => this.playSolo(socket))
+            socket.on('leaveAllGames', () => this.leaveAndRemoveGames(socket));
+            socket.on('disconnect', () => this.leaveAndRemoveGames(socket));
+        });
     }
 
     public joinNormalGame(socket: SocketIO.Socket, gameData: GameData) {
