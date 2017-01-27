@@ -34,8 +34,11 @@ export class GameHandler {
     private combatTextGenerator = new CombatTextGenerator();
 
     constructor(private io: SocketIO.Server) {
-        console.log('test');
         setInterval(this.emitPlayerCount.bind(this), 3000);
+    }
+
+    public getGames() {
+        return this.games;
     }
 
     private emitPlayerCount() {
@@ -225,6 +228,7 @@ export class GameHandler {
                 this.endGame(key);
             }
         }
+        socket.emit('cleanupDone');
     }
 
     private endGame(gameID: string) {
