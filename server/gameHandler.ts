@@ -106,11 +106,37 @@ export class GameHandler {
         }
     }
 
+    public playSolo(socket: SocketIO.Socket) {
+        const id = socket.id + new Date().getTime();
+        socket.join(id);
+        this.games[id] = this.getGameObj(socket);
+        const game = this.games[id];
+        game.active = true;
+        game.solo = true;
+        game.timer = new Date();
+        game.loopInterval = this.getUpdateLoop(game, id);
+
+        socket.emit('init solo', this.getInitObj(id));
+        socket.on('update', (playerData: PlayerData) => this.updateGameData(id, playerData, socket));
+        socket.on('stop', () => this.stopGameLoop(game));
+    }
+
     public startMultiplayerGame(gameID: string) {
         const game = this.games[gameID];
         game.active = true;
         game.timer = new Date();
-        game.loopInterval = setInterval(() => {
+        game.loopInterval = this.getUpdateLoop(game, gameID);
+
+        this.io.to(gameID).emit('initNormal', this.getInitObj(gameID));
+
+        game.sockets.forEach(socket => {
+            socket.on('update', (playerData: PlayerData) => this.updateGameData(gameID, playerData, socket));
+            socket.on('gameEnd', () => this.endGame(gameID));
+        });
+    }
+
+    private getUpdateLoop(game: Game, gameID: string) {
+        return setInterval(() => {
             if (this.getCountDown(game.timer) <= 0 && game.active) {
                 this.endGame(gameID);
                 game.active = false;
@@ -120,29 +146,25 @@ export class GameHandler {
                 timer: this.getCountDown(this.games[gameID].timer),
             });
         }, this.tickRate);
+    }
 
-        this.io.to(gameID).emit('initNormal', {
+    private getInitObj(gameID) {
+        return {
             combos: this.games[gameID].combatTextGenerator.getActiveCombos(),
             timer: this.getCountDown(this.games[gameID].timer),
-        });
+        }
+    }
 
-        game.sockets.forEach(socket => {
-            socket.on('update', (playerData: PlayerData) => {
-                const game = this.games[gameID];
-                const player = game.players[socket.id];
-                player.index = playerData.index;
-                if (player.index > game.highestIndex) {
-                    game.highestIndex = player.index;
-                    game.combatTextGenerator.addCombatText();
-                }
-                player.completedCharacters = playerData.completedCharacters;
-                player.cpm = playerData.cpm;
-            });
-
-            socket.on('gameEnd', () => {
-                this.endGame(gameID);
-            });
-        });
+    private updateGameData(gameID: string, playerData: PlayerData, socket: SocketIO.Socket) {
+        const game = this.games[gameID];
+        const player = game.players[socket.id];
+        player.index = playerData.index;
+        if (player.index > game.highestIndex) {
+            game.highestIndex = player.index;
+            game.combatTextGenerator.addCombatText();
+        }
+        player.completedCharacters = playerData.completedCharacters;
+        player.cpm = playerData.cpm;
     }
 
     private stopGameLoop(game: Game) {
@@ -168,50 +190,6 @@ export class GameHandler {
         game.sockets.push(socket);
         game.active = true;
         this.io.to(gameID).emit('match found', gameID);
-    }
-
-    public playSolo(socket: SocketIO.Socket) {
-        const id = socket.id + new Date().getTime();
-        socket.join(id);
-        this.games[id] = this.getGameObj(socket);
-        const game = this.games[id];
-        game.active = true;
-        game.solo = true;
-        game.timer = new Date(),
-            game.loopInterval = setInterval(() => {
-                if (this.getCountDown(game.timer) <= 0 && game.active) {
-                    this.endGame(id);
-                    game.active = false;
-                }
-                if (!!this.games[id]) {
-                    socket.emit('update', {
-                        combos: this.games[id].combatTextGenerator.getActiveCombos(),
-                        timer: this.getCountDown(this.games[id].timer),
-                    });
-                }
-            }, this.tickRate),
-
-            socket.emit('init solo', {
-                combos: this.games[id].combatTextGenerator.getActiveCombos(),
-                timer: this.getCountDown(this.games[id].timer),
-            });
-
-        socket.on('update', (playerData: PlayerData) => {
-            const game = this.games[id];
-            const player = game.players[socket.id];
-            player.index = playerData.index;
-            if (player.index > game.highestIndex) {
-                game.highestIndex = player.index;
-                game.combatTextGenerator.addCombatText();
-            }
-            player.completedCharacters = playerData.completedCharacters;
-        });
-
-        socket.on('stop', () => {
-            try {
-                clearInterval(this.games[id].loopInterval);
-            } catch (e) { }
-        })
     }
 
     public leaveAndRemoveGames(socket: SocketIO.Socket) {
