@@ -22,6 +22,12 @@ class UiHandler {
         this.connection.getSocket().on('wrong password', () => this.showMessage("INCORRECT PASSWORD"));
     }
 
+    public goHome = () => {
+        this.connection.leaveAll();
+        this.game.stopGame();
+        this.setupStartState()
+    }
+
     public setupStartState() {
         this.clearUIState();
 

@@ -43,13 +43,13 @@ class Game {
     }
 
     public activeKeyListner() {
-        window.onkeydown = (event) => {
+        document.onkeydown = (event: KeyboardEvent) => {
             this.enterLetter(event.keyCode);
         }
     }
 
     public stopKeyListner() {
-        window.onkeydown = null;
+        document.onkeydown = null;
     }
 
     public createSoloGame() {

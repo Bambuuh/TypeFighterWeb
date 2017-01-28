@@ -210,7 +210,7 @@ export class GameHandler {
         socket.on('stop', () => {
             try {
                 clearInterval(this.games[id].loopInterval);
-            } catch (e) { console.error('couldnt stop interval') }
+            } catch (e) { }
         })
     }
 
