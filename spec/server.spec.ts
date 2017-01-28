@@ -66,7 +66,7 @@ describe("Server", () => {
 				clearClients();
 				done();
 			});
-			client.once('waiting for player', () => client2.emit('join multiplayer', { gameID: 'test', password: 'wrong'}));
+			client.once('waiting for player', () => client2.emit('join multiplayer', { gameID: 'test', password: 'wrong' }));
 			client.emit('create multiplayer', gameData);
 		});
 
@@ -82,7 +82,7 @@ describe("Server", () => {
 				clearClients();
 				done();
 			});
-			client.once('waiting for player', () => client2.emit('join multiplayer', { gameID: 'test123', password: 'wrong'}));
+			client.once('waiting for player', () => client2.emit('join multiplayer', { gameID: 'test123', password: 'wrong' }));
 			client.emit('create multiplayer', gameData);
 		});
 
@@ -102,8 +102,8 @@ describe("Server", () => {
 				clearClients();
 				done();
 			});
-			client2.once('match found', () => client3.emit().emit('join multiplayer', { gameID: 'test', password: 'test'}));
-			client.once('waiting for player', () => client2.emit('join multiplayer', { gameID: 'test', password: 'test'}));
+			client2.once('match found', () => client3.emit().emit('join multiplayer', gameData));
+			client.once('waiting for player', () => client2.emit('join multiplayer', gameData));
 			client.emit('create multiplayer', gameData);
 		});
 
@@ -122,7 +122,7 @@ describe("Server", () => {
 				done();
 			});
 			client2.once('match found', () => client2.emit('leaveAllGames'));
-			client.once('waiting for player', () => client2.emit('join multiplayer', { gameID: 'test', password: 'test'}));
+			client.once('waiting for player', () => client2.emit('join multiplayer', gameData));
 			client.emit('create multiplayer', gameData);
 		});
 
@@ -137,7 +137,84 @@ describe("Server", () => {
 			})
 			client.once('finalStats', data => client.emit('leaveAllGames'))
 			client2.once('match found', () => client2.emit('leaveAllGames'));
-			client.once('waiting for player', () => client2.emit('join multiplayer', { gameID: 'test', password: 'test'}));
+			client.once('waiting for player', () => client2.emit('join multiplayer', gameData));
+			client.emit('create multiplayer', gameData);
+		});
+	});
+
+	describe('creating custom game', () => {
+		beforeEach(done => {
+			io = socketIO.listen(8080);
+			handler = new GameHandler(io);
+			handler.setupEventListner();
+			done();
+		});
+
+		afterEach(done => {
+			io.close();
+			done();
+		});
+
+		it('creating first game on server', done => {
+			const client = getNewClient();
+			const gameData = { gameID: 'test', password: 'test' };
+
+			client.once('waiting for player', () => {
+				const amount = getGameCount(handler);
+				const game = getGameFromKey(handler, gameData.gameID);
+				expect(amount).toBe(1);
+				expect(game.password).toBe(gameData.password);
+				expect(game.solo).toBeFalsy();
+				expect(game.quickplay).toBeFalsy();
+				expect(game.leaver).toBeFalsy();
+				expect(game.sockets.length).toBe(1);
+				expect(game.active).toBeFalsy();
+				done();
+			});
+			client.emit('create multiplayer', gameData);
+		});
+
+		it('creating second game on server, no join', done => {
+			const client = getNewClient();
+			const client2 = getNewClient();
+			const gameData = { gameID: 'test', password: 'test' };
+			const gameData2 = { gameID: 'test2', password: 'test2' };
+
+			client2.once('waiting for player', () => {
+				const amount = getGameCount(handler);
+				const game = getGameFromKey(handler, gameData2.gameID);
+				expect(amount).toBe(2);
+				expect(game.password).toBe(gameData2.password);
+				expect(game.solo).toBeFalsy();
+				expect(game.quickplay).toBeFalsy();
+				expect(game.leaver).toBeFalsy();
+				expect(game.sockets.length).toBe(1);
+				expect(game.active).toBeFalsy();
+				done();
+			})
+			client.once('waiting for player', () => client2.emit('create multiplayer', gameData2));
+			client.emit('create multiplayer', gameData);
+		});
+
+		it('creating existing game name', done => {
+			const client = getNewClient();
+			const client2 = getNewClient();
+			const gameData = { gameID: 'test', password: 'test' };
+			const gameData2 = { gameID: 'test', password: 'test2' };
+
+			client2.once('room exists', () => {
+				const amount = getGameCount(handler);
+				const game = getGameFromKey(handler, gameData2.gameID);
+				expect(amount).toBe(1);
+				expect(game.password).not.toBe(gameData2.password);
+				expect(game.solo).toBeFalsy();
+				expect(game.quickplay).toBeFalsy();
+				expect(game.leaver).toBeFalsy();
+				expect(game.sockets.length).toBe(1);
+				expect(game.active).toBeFalsy();
+				done();
+			})
+			client.once('waiting for player', () => client2.emit('create multiplayer', gameData2));
 			client.emit('create multiplayer', gameData);
 		});
 	});
@@ -159,11 +236,17 @@ describe("Server", () => {
 		it('joining with no game active', done => {
 			const client = getNewClient();
 			client.once('waiting for player', () => {
+				const game = getGameFromIndex(handler, 0);
 				expect(getGameCount(handler)).toBe(1);
+				expect(game.solo).toBeFalsy();
+				expect(game.quickplay).toBeTruthy();
+				expect(game.leaver).toBeFalsy();
+				expect(game.sockets.length).toBe(1);
+				expect(game.active).toBeFalsy();
 				clearClients();
 				done();
 			});
-			client.emit('quickplay', { gameID: 'test', password: 'test' });
+			client.emit('quickplay');
 		});
 
 		it('joining with game active', done => {
@@ -177,7 +260,7 @@ describe("Server", () => {
 				expect(game.active).toBe(true);
 				clearClients();
 				done();
-			})				
+			})
 			client.once('waiting for player', () => client2.emit('quickplay'));
 			client.emit('quickplay', { gameID: 'test', password: 'test' });
 		});
@@ -195,12 +278,8 @@ describe("Server", () => {
 				clearClients();
 				done();
 			});
-			client2.once('match found', () => {
-				client3.emit('quickplay');
-			});				
-			client.once('waiting for player', () => {
-				client2.emit('quickplay');
-			});
+			client2.once('match found', () => client3.emit('quickplay'));
+			client.once('waiting for player', () => client2.emit('quickplay'));
 			client.emit('quickplay', { gameID: 'test', password: 'test' });
 		});
 	})
@@ -225,7 +304,7 @@ describe("Server", () => {
 			client2.once('client count', data => {
 				expect(data).toBe(2);
 				clearClients();
-				done();				
+				done();
 			})
 			client.once('client count', data => client2.emit('connection'));
 			client.emit('connection');
@@ -239,7 +318,7 @@ describe("Server", () => {
 	function clearClients() {
 		clients.forEach(client => client.disconnect(true));
 		clients = [];
-	} 
+	}
 
 	function getGameFromKey(gameHandler: GameHandler, id: string) {
 		return gameHandler.getGames()[id];
@@ -252,10 +331,10 @@ describe("Server", () => {
 
 	function getNewClient() {
 		const newClient = clientSocket.connect(baseUrl, {
-				'reconnection delay': 0
-				, 'reopen delay': 0
-				, 'force new connection': true
-			});
+			'reconnection delay': 0
+			, 'reopen delay': 0
+			, 'force new connection': true
+		});
 		clients.push(newClient);
 		return newClient;
 	}
