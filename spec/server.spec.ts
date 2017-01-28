@@ -284,6 +284,48 @@ describe("Server", () => {
 		});
 	})
 
+	describe('gameloop', () => {
+
+		beforeEach(done => {
+			io = socketIO.listen(8080);
+			handler = new GameHandler(io);
+			handler.setupEventListner();
+			done();
+		});
+
+		afterEach(done => {
+			io.close();
+			done();
+		});
+
+		it('multiplayer', done => {
+			const client = getNewClient();
+			const client2 = getNewClient();
+			client.once('update', data => {
+				expect(data).not.toBe(undefined);
+				expect(data.combos.length > 0).toBeTruthy();
+				expect(data.timer).not.toBe(undefined);
+				clearClients();
+				done();
+			});
+			client.once('waiting for player', () => client2.emit('quickplay'));
+			client.emit('quickplay');
+		});
+
+		it('solo', done => {
+			const client = getNewClient();
+			client.once('update', data => {
+				expect(data).not.toBe(undefined);
+				expect(data.combos.length > 0).toBeTruthy();
+				expect(data.timer).not.toBe(undefined);
+				clearClients();
+				done();
+			});
+			client.emit('create solo game');
+		});
+
+	});
+
 	describe('client connection', () => {
 
 		beforeEach(done => {
