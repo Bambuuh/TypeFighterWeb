@@ -22,6 +22,8 @@ class Game {
     private matchTime = 31;
 
     private running = false;
+    private gameEnd = false;
+
     private finalScore: {
         playerStats: { [id: string]: { cpm: number, completedCharacters: number } },
         leaver: boolean;
@@ -35,6 +37,7 @@ class Game {
     }
 
     public init() {
+        this.gameEnd = false;
         this.player = new Player();
         this.timer = 33;
         this.activeKeyListner();
@@ -52,8 +55,12 @@ class Game {
         }
     }
 
-    public stopKeyListner() {
+    private stopKeyListner() {
         document.onkeydown = null;
+    }
+
+    private stopGameLoop() {
+        this.running = false;
     }
 
     public createSoloGame() {
@@ -72,10 +79,7 @@ class Game {
                 completedCharacters: this.player.getCompletedCharacters(),
             });
 
-            this.connection.getSocket().on('finalStats', data => {
-                this.running = false;
-                this.finalScore = data;
-            });
+            this.connection.getSocket().on('finalStats', finalScore => this.setFinalScore(finalScore));
         });
 
         this.start();
@@ -99,18 +103,22 @@ class Game {
                 cpm: this.player.getCPM(),
             });
 
-            this.connection.getSocket().on('finalStats', data => {
-                this.running = false;
-                this.finalScore = data;
-            });
+            this.connection.getSocket().on('finalStats', finalScore => this.setFinalScore(finalScore));
         })
 
         this.start();
     }
 
+    private setFinalScore(finalScore) {
+        this.running = false;
+        this.gameEnd = true;
+        this.finalScore = finalScore;
+    }
+
     public stopGame() {
         this.connection.stopGame();
         this.stopKeyListner();
+        this.stopGameLoop();
     }
 
     public start() {
@@ -119,6 +127,7 @@ class Game {
     }
 
     private loop = () => {
+        console.log(this.running)
         if (this.running) {
             this.player.setCpm(this.timer);
         } else {
@@ -136,7 +145,7 @@ class Game {
         this.renderBackground();
         if (this.timer > this.matchTime) {
             this.drawPreparation();
-        } else if (this.running) {
+        } else if (!this.gameEnd) {
             this.drawPlayer();
             this.drawTimer();
         } else {
