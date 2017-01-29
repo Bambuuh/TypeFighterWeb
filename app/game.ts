@@ -18,13 +18,15 @@ class Game {
     private player: Player;
     private opponent: Player;
 
+    private timer;
+    private matchTime = 31;
+
     private running = false;
     private finalScore: {
         playerStats: { [id: string]: { cpm: number, completedCharacters: number } },
         leaver: boolean;
     } = undefined;
 
-    private timer = 30;
 
     constructor() { }
 
@@ -34,7 +36,7 @@ class Game {
 
     public init() {
         this.player = new Player();
-        this.timer = 30;
+        this.timer = 33;
         this.activeKeyListner();
         this.canvas = <HTMLCanvasElement>document.getElementById('canvas');
         this.context = this.canvas.getContext('2d');
@@ -44,7 +46,9 @@ class Game {
 
     public activeKeyListner() {
         document.onkeydown = (event: KeyboardEvent) => {
-            this.enterLetter(event.keyCode);
+            if (this.timer < this.matchTime) {
+                this.enterLetter(event.keyCode);
+            }
         }
     }
 
@@ -130,12 +134,23 @@ class Game {
 
     private render() {
         this.renderBackground();
-        if (this.running) {
+        if (this.timer > this.matchTime) {
+            this.drawPreparation();
+        } else if (this.running) {
             this.drawPlayer();
             this.drawTimer();
         } else {
             this.drawScore();
         }
+    }
+
+    private drawPreparation() {
+        this.context.font = '150pt Akashi';
+        this.context.fillStyle = 'white';
+        const text = (Math.floor(this.timer - 30)).toString();
+        const x = (this.width / 2) - (this.context.measureText(text).width / 2);
+        const y = (this.height / 2) + (parseInt(this.context.font) / 2.5);
+        this.context.fillText(text, x, y);
     }
 
     private drawScore() {
