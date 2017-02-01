@@ -152,6 +152,7 @@ export class GameHandler {
         return {
             combos: this.games[gameID].combatTextGenerator.getActiveCombos(),
             timer: this.getCountDown(this.games[gameID].timer),
+            solo: this.games[gameID].solo,
         }
     }
 
