@@ -1,11 +1,7 @@
 class Player {
 
-    private x: number;
-    private y: number;
-
     private combatText = new CombatText();
-    private currentIndex: 0;
-    private cpm = 0;
+    private cps = 0;
 
     private font = '20pt Akashi';
 
@@ -16,29 +12,25 @@ class Player {
         this.getCombatText().setCurrentCombatText(0);
     };
 
+    public getFont() {
+        return this.font;
+    }
+
     public getIndex() {
         return this.combatText.getIndex();
     }
 
-    public getCompletedCharacters() {
+    public getScore() {
         return this.combatText.getcompletedCharacters();
     }
 
-    public getX() {
-        return this.x;
+    public getCps() {
+        return this.cps;
     }
 
-    public getY() {
-        return this.y
-    }
-
-    public getCPM() {
-        return this.cpm;
-    }
-
-    public setCpm(timer: number) {
+    public setCps(timer: number) {
         const completed = this.combatText.getcompletedCharacters()
-        this.cpm = completed > 0 ? Math.floor((60 / (30 - timer) * completed)): 0;
+        this.cps = completed > 0 ? Math.floor((60 / (30 - timer) * completed)): 0;
     }
 
     public getCombatText() {
@@ -47,35 +39,5 @@ class Player {
 
     public enterLetter(letter: string) {
         this.combatText.enterLetter(letter);
-    }
-
-    public draw(context: CanvasRenderingContext2D, timer: number, width: number, height: number) {
-        context.fillStyle = 'white';
-        context.font = this.font;
-        this.drawComboText(context, width, height);
-        this.drawCompletedCharacters(context, timer, width);
-        this.drawCharactersPerSecond(context, width);
-    }
-
-    public drawComboText(context: CanvasRenderingContext2D, width: number, height: number) {
-        this.combatText.drawCombo(context, this.font, width, height);
-    }
-
-    public drawCompletedCharacters(context: CanvasRenderingContext2D, timer: number, width: number) {
-        this.combatText.drawScore(context);
-    }
-
-    public drawCharactersPerSecond(context: CanvasRenderingContext2D, width:number) {
-        const text = 'CPM';
-        const textHeight = parseInt(context.font);
-        let x = width - context.measureText(text).width - 32;
-        let y = 16 + textHeight;
-
-        context.fillText(text, x, y);
-
-        x += context.measureText(text).width - context.measureText(this.cpm.toString()).width
-        y += 32;
-
-        context.fillText(this.cpm.toString(), x, y);
     }
 }

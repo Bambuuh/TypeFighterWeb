@@ -29,6 +29,10 @@ class CombatText {
         return this.completedCharacters;
     }
 
+    public getCurrentCombatText() {
+        return this.currentCombatText;
+    }
+
     public setCurrentCombatText(index: number) {
         this.currentCombatText = this.setNewCombatText(this.combatTexts[index]);
     }
@@ -48,37 +52,5 @@ class CombatText {
             this.currentIndex++;
             this.currentCombatText = this.setNewCombatText(this.combatTexts[this.currentIndex]);
         }
-    }
-
-    public drawCombo(context, font, width, height) {
-        let textHeight = parseInt(context.font);
-        let y = Math.floor((height / 2) + (textHeight / 2));
-        let x = Math.floor((width / 2) - (context.measureText(this.combatTexts[this.currentIndex]).width / 2));
-
-        let letterX = 0;
-        
-        this.currentCombatText.forEach(combatLetter => {
-            context.fillStyle = combatLetter.done ? 'red' : 'white';
-            context.fillText(combatLetter.letter, x + letterX, y);
-            letterX += context.measureText(combatLetter.letter).width;
-        });
-
-        for (let i = this.currentIndex + 1; i <= this.combatTexts.length - 1 && i < this.currentIndex + 4; i++) {
-            const text = this.combatTexts[i];
-            textHeight = parseInt(context.font);
-            y += Math.floor(textHeight + 20);
-            x = Math.floor((width / 2) - (context.measureText(text).width / 2));
-            context.fillText(text, x, y);
-        }
-    }
-
-    public drawScore(context: CanvasRenderingContext2D) {
-        const text = 'SCORE';
-        const x = 32;
-        let y = 16 + parseInt(context.font);
-        context.fillText(text, x, y);
-
-        y += 32;
-        context.fillText(this.completedCharacters.toString(), x, y);
     }
 }

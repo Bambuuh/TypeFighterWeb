@@ -7,8 +7,8 @@ export interface GameData {
 
 interface PlayerData {
     index: number;
-    completedCharacters: number;
-    cpm: number;
+    score: number;
+    cps: number;
 }
 
 interface Game {
@@ -65,7 +65,7 @@ export class GameHandler {
         } else if (Object.keys(game.players).length < 2) {
             if (game.password === gameData.password) {
                 this.joinGame(socket, gameData.gameID);
-                this.startMultiplayerGame(gameData.gameID);
+                this.startMultiplayerGame(socket, gameData.gameID);
             } else {
                 socket.emit('wrong password');
             }
@@ -90,7 +90,7 @@ export class GameHandler {
             if (!!game && !game.active && Object.keys(game.players).length < 2) {
                 this.joinGame(socket, id)
                 socket.adapter.rooms
-                this.startMultiplayerGame(id);
+                this.startMultiplayerGame(socket, id);
                 joined = true;
                 break;
             }
@@ -121,11 +121,11 @@ export class GameHandler {
         socket.on('stop', () => this.stopGameLoop(game));
     }
 
-    public startMultiplayerGame(gameID: string) {
+    public startMultiplayerGame(socket: SocketIO.Socket, gameID: string) {
         const game = this.games[gameID];
         game.active = true;
         game.timer = new Date();
-        game.loopInterval = this.getUpdateLoop(game, gameID);
+        game.loopInterval = this.getUpdateLoop(game, gameID, socket);
 
         this.io.to(gameID).emit('initNormal', this.getInitObj(gameID));
 
@@ -135,16 +135,23 @@ export class GameHandler {
         });
     }
 
-    private getUpdateLoop(game: Game, gameID: string) {
+    private getUpdateLoop(game: Game, gameID: string, socket?: SocketIO.Socket) {
         return setInterval(() => {
+            const updateData: any = {
+                combos: game.combatTextGenerator.getActiveCombos(),
+                timer: this.getCountDown(game.timer),
+            };
+
+            if (!game.solo) {
+                updateData.playerData = game.players
+            }
+            
             if (this.getCountDown(game.timer) <= 0 && game.active) {
                 this.endGame(gameID);
                 game.active = false;
             }
-            this.io.to(gameID).emit('update', {
-                combos: this.games[gameID].combatTextGenerator.getActiveCombos(),
-                timer: this.getCountDown(this.games[gameID].timer),
-            });
+
+            this.io.to(gameID).emit('update', updateData);
         }, this.tickRate);
     }
 
@@ -164,8 +171,8 @@ export class GameHandler {
             game.highestIndex = player.index;
             game.combatTextGenerator.addCombatText();
         }
-        player.completedCharacters = playerData.completedCharacters;
-        player.cpm = playerData.cpm;
+        player.score = playerData.score;
+        player.cps = playerData.cps;
     }
 
     private stopGameLoop(game: Game) {
@@ -187,7 +194,7 @@ export class GameHandler {
     private joinGame(socket: SocketIO.Socket, gameID: string) {
         socket.join(gameID);
         const game = this.games[gameID];
-        game.players[socket.id] = { index: 0, completedCharacters: 0, cpm: 0 };
+        game.players[socket.id] = { index: 0, score: 0, cps: 0 };
         game.sockets.push(socket);
         game.active = true;
         this.io.to(gameID).emit('match found', gameID);
@@ -222,7 +229,7 @@ export class GameHandler {
 
     private getGameObj(socket) {
         return {
-            players: { [socket.id]: { index: 0, completedCharacters: 0, cpm: 0 } },
+            players: { [socket.id]: { index: 0, score: 0, cps: 0 } },
             sockets: [socket],
             highestIndex: 0,
             active: false,

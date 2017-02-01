@@ -1,6 +1,7 @@
 interface ClientGameData {
     combos: string[];
     timer: number;
+    playerData?: { [id: string]: { score: number, cps: number } }
     solo?: boolean;
 }
 
@@ -9,16 +10,10 @@ class Game {
     private static _instance = new Game()
     private renderer = new Renderer();
 
-    private gameName = '';
-
     private connection = ClientConnection.getInstance();
-    private context: CanvasRenderingContext2D;
-    private canvas: HTMLCanvasElement;
-    private width: number;
-    private height: number;
 
     private player: Player;
-    private opponent: Player;
+    private opponent: Opponent;
 
     private timer;
     private matchTime = 31;
@@ -28,7 +23,7 @@ class Game {
     private solo = false;
 
     private finalScore: {
-        playerStats: { [id: string]: { cpm: number, completedCharacters: number } },
+        playerStats: { [id: string]: { cps: number, score: number } },
         leaver: boolean;
     } = undefined;
 
@@ -42,6 +37,7 @@ class Game {
     public init() {
         this.gameEnd = false;
         this.player = new Player();
+        this.opponent = new Opponent();
         this.timer = 33;
         this.activeKeyListner();
         this.renderer.init();
@@ -72,7 +68,6 @@ class Game {
     }
 
     public createMultiplayerGame(gameData) {
-        this.gameName = gameData;
         this.init();
         this.connection.getSocket().on('initNormal', (gameData: ClientGameData) => this.initGame(gameData));
         this.connection.getSocket().on('update', (gameData: ClientGameData) => this.onUpdate(gameData));
@@ -80,16 +75,31 @@ class Game {
     }
 
     private onUpdate(gameData: ClientGameData) {
+        const opponent = this.getOpponent(gameData, this.connection.getSocket().id);
         this.player.getCombatText().setCombatTexts(gameData.combos);
         this.timer = gameData.timer;
+        if (!!opponent) {
+            this.opponent.setCps(opponent.cps);
+            this.opponent.setScore(opponent.score);
+        }
 
         this.connection.getSocket().emit('update', {
             index: this.player.getIndex(),
-            completedCharacters: this.player.getCompletedCharacters(),
-            cpm: this.player.getCPM(),
+            score: this.player.getScore(),
+            cps: this.player.getCps(),
         });
 
         this.connection.getSocket().on('finalStats', finalScore => this.setFinalScore(finalScore));
+    }
+
+    private getOpponent(gameData: ClientGameData, id: string) {
+        let opponent;
+        for (const playerId in gameData.playerData) {
+            if (playerId !== id) {
+                opponent = gameData.playerData[playerId];
+            }
+        }
+        return opponent;
     }
 
     private initGame(gameData: ClientGameData) {
@@ -117,7 +127,7 @@ class Game {
 
     private loop = () => {
         if (this.running) {
-            this.player.setCpm(this.timer);
+            this.player.setCps(this.timer);
         } else {
             this.connection.stopGame();
         }
@@ -130,12 +140,16 @@ class Game {
     }
 
     private render() {
+
         this.renderer.renderBackground();
         if (this.timer > this.matchTime) {
             this.renderer.drawPreparation(this.timer);
         } else if (!this.gameEnd) {
-            this.renderer.drawPlayer(this.player, this.timer);
-            this.renderer.drawTimer(this.timer);
+            if (this.solo) {
+                this.renderer.drawSolo(this.player, this.timer);
+            } else {
+                this.renderer.drawMultiplayer(this.player, this.opponent, this.timer);
+            }
         } else {
             this.drawScore();
         }
