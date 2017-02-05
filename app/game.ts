@@ -18,6 +18,15 @@ class Game {
     private timer;
     private matchTime = 31;
 
+    private readonly startTime = new Date().getMilliseconds();
+    private readonly ticksPerSecond = 25
+    private readonly skipTicks = 1000 / this.ticksPerSecond;
+    private readonly maxFrameSkip = 5;
+
+    private nextTick = this.getTickCount();
+    private loopCount = 0;
+    private interpolation;
+
     private running = false;
     private gameEnd = false;
     private solo = false;
@@ -32,6 +41,10 @@ class Game {
 
     public static getInstance() {
         return this._instance;
+    }
+
+    private getTickCount() {
+        return new Date().getMilliseconds() - this.startTime;
     }
 
     public init() {
@@ -76,7 +89,7 @@ class Game {
 
     private onUpdate(gameData: ClientGameData) {
         const opponent = this.getOpponent(gameData, this.connection.getSocket().id);
-        this.player.getCombatText().setCombatTexts(gameData.combos);
+        this.player.addCombatTexts(gameData.combos);
         this.timer = gameData.timer;
         if (!!opponent) {
             this.opponent.setCps(opponent.cps);
@@ -132,23 +145,31 @@ class Game {
             this.connection.stopGame();
         }
 
-        this.render();
+        this.loopCount = 0;
+
+        while(this.getTickCount() > this.nextTick && this.loopCount < this.maxFrameSkip) {
+            this.nextTick += this.skipTicks;
+            this.loopCount++;
+        }
+
+        this.interpolation = (this.getTickCount() + this.skipTicks - this.nextTick) / this.skipTicks;
+        this.render(this.interpolation);
 
         if (this.running) {
             requestAnimationFrame(this.loop);
         }
     }
 
-    private render() {
+    private render(interpolation: number) {
 
         this.renderer.renderBackground();
         if (this.timer > this.matchTime) {
             this.renderer.drawPreparation(this.timer);
         } else if (!this.gameEnd) {
             if (this.solo) {
-                this.renderer.drawSolo(this.player, this.timer);
+                this.renderer.drawSolo(this.player, this.timer, interpolation);
             } else {
-                this.renderer.drawMultiplayer(this.player, this.opponent, this.timer);
+                this.renderer.drawMultiplayer(this.player, this.opponent, this.timer, interpolation);
             }
         } else {
             this.drawScore();

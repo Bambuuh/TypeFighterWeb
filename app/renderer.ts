@@ -5,6 +5,7 @@ class Renderer {
     private width: number;
 
     private baseLine = 16;
+    private baseFont = 20;
 
     constructor() {}
 
@@ -15,39 +16,48 @@ class Renderer {
         this.height = canvas.height;
     }
 
-    public drawSolo(player: Player, timer: number) {
+    public drawSolo(player: Player, timer: number, interpolation: number) {
+        this.drawComboText(player, interpolation);
         this.context.fillStyle = 'white';
-        this.drawComboText(player);
         this.drawScore(player);
         this.drawCps(player);
         this.drawTimer(timer);
     }
 
-    private drawComboText(player: Player) {
-        this.context.font = player.getFont();
+    private drawComboText(player: Player, interpolation: number) {
+        const font = player.getFont();
+        let opacity = 1;
+        let fontSize = 26;
+        this.context.font = `${fontSize}pt ${font}`;
+        this.context.fillStyle = `rgba(255,255,255,${opacity})`;
         let textHeight = parseInt(this.context.font);
         let y = Math.floor((this.height / 2) + (textHeight / 2));
-        let x = Math.floor((this.width / 2) - (this.context.measureText(player.getCombatText().getCombatTexts()[player.getIndex()]).width / 2));
+        let x = Math.floor((this.width / 2) - (this.context.measureText(player.getCurrentCombatText().getPlainText()).width / 2));
 
         let letterX = 0;
         
-        player.getCombatText().getCurrentCombatText().forEach(combatLetter => {
+        player.getCurrentCombatText().getCombatText().forEach(combatLetter => {
             this.context.fillStyle = combatLetter.done ? 'red' : 'white';
             this.context.fillText(combatLetter.letter, x + letterX, y);
             letterX += this.context.measureText(combatLetter.letter).width;
         });
 
-        for (let i = player.getIndex() + 1; i <= player.getCombatText().getCombatTexts().length - 1 && i < player.getIndex() + 4; i++) {
-            const text = player.getCombatText().getCombatTexts()[i];
+        for (let i = player.getIndex() + 1; i <= player.getCombatTexts().length - 1 && i < player.getIndex() + 4; i++) {
+            fontSize -= 4;
+            opacity -= 0.3;
+            this.context.fillStyle = `rgba(255,255,255,${opacity})`;
+            this.context.font = `${fontSize}pt ${font}`;
+            const text = player.getCombatTexts()[i].getPlainText();
             textHeight = parseInt(this.context.font);
-            y += Math.floor(textHeight + 20);
+            y += Math.floor(textHeight + 40);
             x = Math.floor((this.width / 2) - (this.context.measureText(text).width / 2));
             this.context.fillText(text, x, y);
         }
     }
 
-    private drawScore(player: Player | Opponent, opponent = false) { 
-        this.context.font = player.getFont();
+    private drawScore(player: Player | Opponent, opponent = false) {
+        const font = player.getFont();
+        this.context.font = `${this.baseFont}pt ${font}`;
         const text = 'SCORE';
         const textHeight =  parseInt(this.context.font);
         let x;
@@ -74,7 +84,8 @@ class Renderer {
     }
 
     private drawCps(player: Player | Opponent, multiplayer = false, opponent = true, startY = this.baseLine) {
-        this.context.font = player.getFont();
+        const font = player.getFont();
+        this.context.font = `${this.baseFont}pt ${font}`;
         const textHeight = parseInt(this.context.font);
         const text = 'CPM';
 
@@ -100,8 +111,8 @@ class Renderer {
         this.context.fillText(player.getCps().toString(), x, y);
     }
 
-    public drawMultiplayer(player: Player, opponent: Opponent, timer: number) {
-        this.drawComboText(player);
+    public drawMultiplayer(player: Player, opponent: Opponent, timer: number, interpolation: number) {
+        this.drawComboText(player, interpolation);
         const y = this.drawScore(player);
         this.drawScore(opponent, true);
         this.drawCps(player, true, false, y);

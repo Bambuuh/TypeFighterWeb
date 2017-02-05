@@ -5,52 +5,33 @@ interface CombatLetter {
 
 class CombatText {
 
-    private combatTexts: string[] = [];
-    private currentCombatText: CombatLetter[] = [];
-
+    private combatText: CombatLetter[];
+    private plainText: string;
     private currentIndex = 0;
-    private completedCharacters = 0;
+    private x = 0;
 
-    constructor() { }
+    constructor(text: string) {
+        this.plainText = text;
+        this.combatText = text.split('').map(char => ({ letter: char, done: false }));
+    }
+    
+    public getX() {
+        return this.x;
+    }
+
+    public setX(x: number) {
+        this.x = x;
+    }
 
     public getIndex() {
         return this.currentIndex;
     }
 
-    public setCombatTexts(texts: string[]) {
-        this.combatTexts = texts;
+    public getCombatText() {
+        return this.combatText;
     }
 
-    public getCombatTexts() {
-        return this.combatTexts
-    }
-
-    public getcompletedCharacters() {
-        return this.completedCharacters;
-    }
-
-    public getCurrentCombatText() {
-        return this.currentCombatText;
-    }
-
-    public setCurrentCombatText(index: number) {
-        this.currentCombatText = this.setNewCombatText(this.combatTexts[index]);
-    }
-
-    private setNewCombatText(comboText: string) {
-        return comboText.split('').map(char => ({ letter: char, done: false }));
-    }
-
-    public enterLetter(letter: string) {
-        const nextLetter = this.currentCombatText.find(combatLetter => !combatLetter.done);
-        if (nextLetter.letter.toUpperCase() === letter.toUpperCase()) {
-            nextLetter.done = true;
-            this.completedCharacters++;
-        }
-
-        if (this.currentIndex < this.combatTexts.length - 1 && this.currentCombatText.every(combatLetter => combatLetter.done)) {
-            this.currentIndex++;
-            this.currentCombatText = this.setNewCombatText(this.combatTexts[this.currentIndex]);
-        }
+    public getPlainText() {
+        return this.plainText;
     }
 }

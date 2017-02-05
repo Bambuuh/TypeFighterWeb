@@ -240,7 +240,8 @@ export class GameHandler {
     }
 
     private getCountDown(timer: Date) {
-        const countDown = 33.9 - (new Date().getTime() - timer.getTime()) / 1000;
+        // const countDown = 33.9 - (new Date().getTime() - timer.getTime()) / 1000;
+        const countDown = 25 - (new Date().getTime() - timer.getTime()) / 1000;
         return countDown >= 0 ? countDown : 0;
     }
 }
