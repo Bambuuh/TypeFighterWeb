@@ -41,11 +41,11 @@ class CombatText {
         return this.oldY;
     }
 
-    public advanceY(height: number) {
+    public advanceY() {
         this.newY -= this.yIncrement;
     }
 
-    public update(height: number) {
+    public update() {
         if (this.oldY > this.newY) {
             this.oldY -= this.yIncrement * 0.1;
         }
@@ -85,9 +85,9 @@ class CombatText {
         this.newFontSize += this.fontSizeIncrement;
     }
 
-    public advance(height: number) {
+    public advance() {
         this.advanceFontSize();
         this.advanceOpacity();
-        this.advanceY(height);
+        this.advanceY();
     }
 }

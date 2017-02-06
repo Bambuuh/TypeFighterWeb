@@ -85,14 +85,14 @@ class Player {
 
         if (currentCombatText.getIndex() < this.combatTexts.length - 1 && currentCombatText.getCombatText().every(combatLetter => combatLetter.done)) {
             this.currentIndex++;
-            this.advanceTexts(height);
+            this.advanceTexts();
         }
     }
     
-    private advanceTexts(height: number) {
+    private advanceTexts() {
         for (let i = this.currentIndex; i < this.currentIndex + 5; i ++) {
             const combatText = this.combatTexts[i];
-            combatText.advance(height);
+            combatText.advance();
         }
     }
 }

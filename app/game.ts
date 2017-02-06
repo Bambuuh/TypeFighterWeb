@@ -31,6 +31,7 @@ class Game {
         leaver: boolean;
     } = undefined;
 
+    private tickrate = 1000 / 60;
 
     constructor() { }
 
@@ -147,7 +148,8 @@ class Game {
         return new Date().getTime();
     }
 
-    private test = new Date().getTime();
+    private previous = new Date().getTime();
+    private lag = 0;
 
     private loop = () => {
         if (this.running) {
@@ -157,10 +159,14 @@ class Game {
         }
 
 
-        const now = this.getCurrentTime();
-        if (now - this.test > 1000 / 60) {
-            this.test = new Date().getTime();
-            this.player.getCombatTexts().forEach(text => text.update(this.height));
+        const current = this.getCurrentTime();
+        const elapsed = current - this.previous;
+        this.previous = current;
+        this.lag += elapsed;
+
+        while(this.lag >= this.tickrate) {
+            this.update();
+            this.lag -= this.tickrate;
         }
         this.render();
         
@@ -168,6 +174,10 @@ class Game {
         if (this.running) {
             requestAnimationFrame(this.loop);
         }
+    }
+
+    private update() {
+        this.player.getCombatTexts().forEach(text => text.update());
     }
 
     private render() {
