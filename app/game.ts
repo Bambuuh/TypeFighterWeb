@@ -9,23 +9,18 @@ class Game {
 
     private static _instance = new Game()
     private renderer = new Renderer();
-
     private connection = ClientConnection.getInstance();
-
     private player: Player;
     private opponent: Opponent;
+
+    private context: CanvasRenderingContext2D;
+    private width: number;
+    private height: number;
 
     private timer;
     private matchTime = 31;
 
     private readonly startTime = new Date().getMilliseconds();
-    private readonly ticksPerSecond = 25
-    private readonly skipTicks = 1000 / this.ticksPerSecond;
-    private readonly maxFrameSkip = 5;
-
-    private nextTick = this.getTickCount();
-    private loopCount = 0;
-    private interpolation;
 
     private running = false;
     private gameEnd = false;
@@ -53,7 +48,12 @@ class Game {
         this.opponent = new Opponent();
         this.timer = 33;
         this.activeKeyListner();
-        this.renderer.init();
+        const canvas = <HTMLCanvasElement>document.getElementById('canvas');
+        this.context = canvas.getContext('2d');
+        this.width = canvas.width;
+        this.height = canvas.height;
+        this.renderer.setContext(this.context);
+        this.renderer.setDimensions(this.width, this.height);
     }
 
     public activeKeyListner() {
@@ -89,7 +89,7 @@ class Game {
 
     private onUpdate(gameData: ClientGameData) {
         const opponent = this.getOpponent(gameData, this.connection.getSocket().id);
-        this.player.addCombatTexts(gameData.combos);
+        this.player.addCombatTexts(gameData.combos, this.height);
         this.timer = gameData.timer;
         if (!!opponent) {
             this.opponent.setCps(opponent.cps);
@@ -116,7 +116,11 @@ class Game {
     }
 
     private initGame(gameData: ClientGameData) {
-        this.player.init(gameData);
+        const canvas = <HTMLCanvasElement>document.getElementById('canvas');
+        this.context = canvas.getContext('2d');
+        this.width = canvas.width;
+        this.height = canvas.height;
+        this.player.init(gameData, this.height);
         this.timer = gameData.timer;
         this.solo = gameData.solo;
     }
@@ -138,6 +142,13 @@ class Game {
         this.loop();
     }
 
+
+    private getCurrentTime() {
+        return new Date().getTime();
+    }
+
+    private test = new Date().getTime();
+
     private loop = () => {
         if (this.running) {
             this.player.setCps(this.timer);
@@ -145,31 +156,30 @@ class Game {
             this.connection.stopGame();
         }
 
-        this.loopCount = 0;
 
-        while(this.getTickCount() > this.nextTick && this.loopCount < this.maxFrameSkip) {
-            this.nextTick += this.skipTicks;
-            this.loopCount++;
+        const now = this.getCurrentTime();
+        if (now - this.test > 1000 / 60) {
+            this.test = new Date().getTime();
+            this.player.getCombatTexts().forEach(text => text.update(this.height));
         }
-
-        this.interpolation = (this.getTickCount() + this.skipTicks - this.nextTick) / this.skipTicks;
-        this.render(this.interpolation);
+        this.render();
+        
 
         if (this.running) {
             requestAnimationFrame(this.loop);
         }
     }
 
-    private render(interpolation: number) {
+    private render() {
 
         this.renderer.renderBackground();
         if (this.timer > this.matchTime) {
             this.renderer.drawPreparation(this.timer);
         } else if (!this.gameEnd) {
             if (this.solo) {
-                this.renderer.drawSolo(this.player, this.timer, interpolation);
+                this.renderer.drawSolo(this.player, this.timer);
             } else {
-                this.renderer.drawMultiplayer(this.player, this.opponent, this.timer, interpolation);
+                this.renderer.drawMultiplayer(this.player, this.opponent, this.timer);
             }
         } else {
             this.drawScore();
@@ -187,7 +197,7 @@ class Game {
     public enterLetter(keycode: number) {
         // guaranteed to be a letter
         if (keycode === 32 || (keycode > 64 && keycode < 91)) {
-            this.player.enterLetter(String.fromCharCode(keycode));
+            this.player.enterLetter(String.fromCharCode(keycode), this.height);
         }
     }
 }

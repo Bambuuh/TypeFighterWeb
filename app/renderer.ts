@@ -9,54 +9,58 @@ class Renderer {
 
     constructor() {}
 
-    public init() {
-        const canvas = <HTMLCanvasElement>document.getElementById('canvas');
-        this.context = canvas.getContext('2d');
-        this.width = canvas.width;
-        this.height = canvas.height;
+    public setContext(context: CanvasRenderingContext2D) {
+        this.context = context;
     }
 
-    public drawSolo(player: Player, timer: number, interpolation: number) {
-        this.drawComboText(player, interpolation);
+    public setDimensions(width: number, height: number) {
+        this.width = width;
+        this.height = height;
+    }
+
+    public drawSolo(player: Player, timer: number) {
+        this.drawCurrentText(player);
+        this.drawComingTexts(player);
         this.context.fillStyle = 'white';
         this.drawScore(player);
         this.drawCps(player);
         this.drawTimer(timer);
     }
 
-    private drawComboText(player: Player, interpolation: number) {
-        const font = player.getFont();
-        let opacity = 1;
-        let fontSize = 26;
-        this.context.font = `${fontSize}pt ${font}`;
-        this.context.fillStyle = `rgba(255,255,255,${opacity})`;
-        let textHeight = parseInt(this.context.font);
-        let y = Math.floor((this.height / 2) + (textHeight / 2));
-        let x = Math.floor((this.width / 2) - (this.context.measureText(player.getCurrentCombatText().getPlainText()).width / 2));
+    private drawTexts(player: Player) {
+        this.drawCurrentText(player);
+        this.drawComingTexts(player);
+    }
 
+    private drawCurrentText(player: Player) {
+        const combatText = player.getCurrentCombatText();
+        this.context.font = `${combatText.getFontSize()}pt ${player.getFont()}`;
+        this.context.fillStyle = `rgba(255,255,255,${combatText.getOpacity()})`;
+        const x = Math.floor((this.width / 2) - (this.context.measureText(combatText.getPlainText()).width / 2));
         let letterX = 0;
-        
-        player.getCurrentCombatText().getCombatText().forEach(combatLetter => {
+        combatText.getCombatText().forEach(combatLetter => {
             this.context.fillStyle = combatLetter.done ? 'red' : 'white';
-            this.context.fillText(combatLetter.letter, x + letterX, y);
+            this.context.fillText(combatLetter.letter, x + letterX, combatText.getY());
             letterX += this.context.measureText(combatLetter.letter).width;
         });
+    }
 
-        for (let i = player.getIndex() + 1; i <= player.getCombatTexts().length - 1 && i < player.getIndex() + 4; i++) {
-            fontSize -= 4;
-            opacity -= 0.3;
-            this.context.fillStyle = `rgba(255,255,255,${opacity})`;
-            this.context.font = `${fontSize}pt ${font}`;
-            const text = player.getCombatTexts()[i].getPlainText();
-            textHeight = parseInt(this.context.font);
-            y += Math.floor(textHeight + 40);
-            x = Math.floor((this.width / 2) - (this.context.measureText(text).width / 2));
-            this.context.fillText(text, x, y);
+    private drawComingTexts(player: Player) {
+        const font = player.getFont();
+        for (let i = player.getIndex() + 1; i <= player.getCombatTexts().length - 1 && i < player.getIndex() + 6; i++) {
+            const combatText = player.getCombatTexts()[i];
+            this.context.font = `${combatText.getFontSize()}pt ${font}`;
+            this.context.fillStyle = `rgba(255,255,255,${combatText.getOpacity()})`;
+            const text = combatText.getPlainText();
+            const textHeight = parseInt(this.context.font);
+            const x = Math.floor((this.width / 2) - (this.context.measureText(text).width / 2));
+            this.context.fillText(text, x, combatText.getY());
         }
     }
 
     private drawScore(player: Player | Opponent, opponent = false) {
         const font = player.getFont();
+        this.context.fillStyle = 'white';
         this.context.font = `${this.baseFont}pt ${font}`;
         const text = 'SCORE';
         const textHeight =  parseInt(this.context.font);
@@ -86,6 +90,7 @@ class Renderer {
     private drawCps(player: Player | Opponent, multiplayer = false, opponent = true, startY = this.baseLine) {
         const font = player.getFont();
         this.context.font = `${this.baseFont}pt ${font}`;
+        this.context.fillStyle = 'white';
         const textHeight = parseInt(this.context.font);
         const text = 'CPM';
 
@@ -111,8 +116,9 @@ class Renderer {
         this.context.fillText(player.getCps().toString(), x, y);
     }
 
-    public drawMultiplayer(player: Player, opponent: Opponent, timer: number, interpolation: number) {
-        this.drawComboText(player, interpolation);
+    public drawMultiplayer(player: Player, opponent: Opponent, timer: number) {
+        this.drawCurrentText(player);
+        this.drawComingTexts(player, );
         const y = this.drawScore(player);
         this.drawScore(opponent, true);
         this.drawCps(player, true, false, y);
